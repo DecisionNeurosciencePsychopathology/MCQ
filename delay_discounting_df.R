@@ -51,7 +51,8 @@
                    termp1==3 | terms2==3 | terms1==3)->terms           
   terms[which(terms$ID %in% unique(finalMCQ[which(finalMCQ$ID %in% terms$ID),"ID"])),]->MCQterms
   finalMCQ[which(!finalMCQ$ID %in% MCQterms$ID),]->finalMCQ
-  #Grab demo info from redcap
+
+#Grab demo info from redcap
   demo<-data.frame(ID=md$data$registration_redcapid, P2condate=md$data$reg_condate_protect2, 
            P1condate=md$data$reg_condate_protect, S2condate=md$data$reg_condate_suicid2,
            S1condate=md$data$reg_condate_suicide, DOB=md$data$registration_dob,
@@ -95,10 +96,13 @@
   income[which(income$Event=="baseline_arm_2"),]->income
   income[which(!is.na(income$Income)),]->income
   
+  
+  
+  
   #Grab MMSE from redcap
   mmse<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$mmse_date, score=p2$data$mmse_s_adj)
   
-  
+#Grab forms
   #grab DRS from redcap
   drs<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$drs_date, score=p2$data$drs_total)
   
@@ -106,10 +110,26 @@
   #grab WTAR from redcap
   wtar<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$wtar_date, score=p2$data$wtar_s_adj)
  
-  
-  #grab EXIT from redcap
-  exit<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$exit_date, score=p2$data$exit_total)
- 
+  #EXIT
+    #grab EXIT from redcap
+    exit<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$exit_date, score=p2$data$exit_total)
+    #grab EXIT from Access
+    exit2<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_EXIT_S.csv")
+    exit2[-c(3:15)]->exit2
+    #Change 88's to 43's
+    exit2$ID[grepl("^88",exit2$ID)]<-paste("43", gsub("88","",exit2$ID[grepl("^88",exit2$ID)]), sep="")
+    mdy(exit2$CDate)->exit2$CDate
+    MCQwdemo$consentdate[match(exit2$ID, MCQwdemo$ID)]->exit2$consentdate
+    exit2[which(!is.na(exit2$consentdate)),]->exit2
+    exit2 %>% mutate(datedif=consentdate-CDate)->exit2
+    
+    <-function(x, y){
+    mdy(x$CDATE)->x$CDATE
+    x$ID[grepl("^88",x$ID)]<-paste("43", gsub("88","",x$ID[grepl("^88",x$ID)]), sep="")
+    y$consentdate[match(x$ID, y$ID)]->x$consentdate
+    x[which(!is.na(x$consentdate))]->x
+    
+  }
   
   #Grab HAM from redcap
   ham<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$ham_date, ham1=p2$data$ham_1_dm,
@@ -150,7 +170,7 @@
   suihx %>% filter(!is.na(sahx_lr)| !is.na(sahx_sadate))->suihx
   
   
-  
+ 
   
   
   
