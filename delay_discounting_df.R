@@ -172,7 +172,6 @@
     rbind(exit,exitold)->EXIT
     as.Date(EXIT$date) -> EXIT$date
     date.match(x=EXIT, id=F, cutoff = 600)->EXIT
-    
     #merge into demo
     EXIT$score->EXIT$exit_total
     EXIT[-c(1,2,4,5)]->EXIT
