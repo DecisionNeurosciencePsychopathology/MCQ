@@ -84,26 +84,32 @@
   as.Date(MCQwdemo$consentdate)->MCQwdemo$consentdate
   as.Date(MCQwdemo$DOB)->MCQwdemo$DOB
   MCQwdemo %>% mutate(bl.age=age_calc(DOB,enddate = consentdate, units="years", precise=F))->MCQwdemo
-  MCQwdemo[which(MCQwdemo$bl.age>49),]
+  MCQwdemo[which(MCQwdemo$bl.age>49),]->MCQwdemo
     #Number of pts: sum(table(unique(MCQwdemo$ID)))
   
   ###############LEFT OFF HERE##################
   
+  #Household income (from Macarthur SDQ)
+  income<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$bq_date,
+                     Event=p2$data$redcap_event_name, Income=p2$data$macarthur_6)
+  income[which(income$Event=="baseline_arm_2"),]->income
+  income[which(!is.na(income$Income)),]->income
+  
   #Grab MMSE from redcap
   mmse<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$mmse_date, score=p2$data$mmse_s_adj)
-  na.rm(mmse)->mmse
+  
   
   #grab DRS from redcap
   drs<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$drs_date, score=p2$data$drs_total)
-  na.rm(drs)->drs
+  
   
   #grab WTAR from redcap
   wtar<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$wtar_date, score=p2$data$wtar_s_adj)
-  na.rm(wtar)->wtar
+ 
   
   #grab EXIT from redcap
   exit<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$exit_date, score=p2$data$exit_total)
-  na.rm(exit)->exit
+ 
   
   #Grab HAM from redcap
   ham<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$ham_date, ham1=p2$data$ham_1_dm,
@@ -149,6 +155,6 @@
   
   
   #Write data to file
-library(xlsx)           
-write.xlsx(finalMCQ,"C:/Users/buerkem/Box/skinner/finalMCQ.xlsx")
+#library(xlsx)           
+#write.xlsx(finalMCQ,"C:/Users/buerkem/Box/skinner/finalMCQ.xlsx")
            
