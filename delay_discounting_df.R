@@ -13,6 +13,20 @@
      names(idmap)<-c("masterdemoid","wpicid","soloffid")
     #p2 map
      p2<-bsrc.checkdatabase2(protocol=ptcs$protect, online=T, batch_size=1000L)
+    #Match dates of assessment to date of MCQ
+     old.date.match<-function(x, y=MCQwdemo, cutoff){
+      as.Date(mdy(x$CDate))->x$CDate
+      x<-bsrc.findid(x,idmap = idmap,id.var = "ID")
+      x[which(x$ifexist==T),]->x
+      y$CDATE[match(x$masterdemoid, y$masterdemoid)]->x$MCQdate
+      x[which(!is.na(x$MCQdate)),]->x
+      mutate(x, datedif=MCQdate-CDate)->x
+      x %>% group_by(masterdemoid) %>% filter(datedif==min(abs(datedif)))->x
+      x[which(abs(x$datedif)<cutoff),]->x
+      return(x)
+     }
+     
+     
 #MCQdata  
   #get old MCQ data file
   MCQold<-read.csv(file ="C:/Users/buerkem/OneDrive - UPMC/Desktop/MCQ data/Copy of subjvalues_k.csv")
@@ -43,6 +57,8 @@
   #Fix old data
   mdy(MCQold$CDATE)->MCQold$CDATE
   MCQold %>% group_by(masterdemoid) %>% filter(CDATE==min(CDATE)) %>%ungroup()->MCQold
+  MCQgather$` masterdemoid`->MCQgather$masterdemoid
+  MCQgather[-2]->MCQgather
   #Merge
   merge(MCQgather, MCQold, all=T)->finalMCQ
   #Remove terms
@@ -57,9 +73,8 @@
   terms %>% filter(excludep2==1 | excludep1==1 | excludes2==1 |excludes1==1|termp2==3|
                    termp1==3 | terms2==3 | terms1==3)->terms
   terms<-bsrc.findid(terms,idmap = idmap,id.var = "ID")
-  terms[which(terms$masterdemoid %in% unique(finalMCQ[which(finalMCQ$masterdemoid %in% terms$masterdemoid),"ID"])),]->MCQterms
+  terms[which(terms$masterdemoid %in% unique(finalMCQ[which(finalMCQ$masterdemoid %in% terms$masterdemoid),"masterdemoid"])),]->MCQterms
   finalMCQ[which(!finalMCQ$masterdemoid %in% MCQterms$masterdemoid),]->finalMCQ
-#######LEFT OFF HERE##############
 #Grab demo info from redcap
   demo<-data.frame(registration_redcapid=md$data$registration_redcapid, P2condate=md$data$reg_condate_protect2, 
            P1condate=md$data$reg_condate_protect, S2condate=md$data$reg_condate_suicid2,
@@ -88,6 +103,7 @@
   demo %>% mutate(consentdate=pmin(demo$S1condate, demo$S2condate, demo$P2condate, 
                 demo$P1condate, na.rm=T))->demo
   demo[-c(1:4,13)]->demo
+  
   merge(demo, finalMCQ, by="masterdemoid", all=T)->MCQwdemo
   MCQwdemo[-which(is.na(MCQwdemo$consentdate)),]->MCQwdemo
   
@@ -96,7 +112,7 @@
   as.Date(MCQwdemo$DOB)->MCQwdemo$DOB
   MCQwdemo %>% mutate(bl.age=age_calc(DOB,enddate = consentdate, units="years", precise=F))->MCQwdemo
   MCQwdemo[which(MCQwdemo$bl.age>49),]->MCQwdemo
-    #Number of pts: sum(table(unique(MCQwdemo$ID)))
+    #Number of pts: sum(table(unique(MCQwdemo$masterdemoid)))
   
   ###############LEFT OFF HERE##################
   
@@ -105,7 +121,8 @@
                      Event=p2$data$redcap_event_name, Income=p2$data$macarthur_6)
   income[which(income$Event=="baseline_arm_2"),]->income
   income[which(!is.na(income$Income)),]->income
-  
+  #as.character(income$ID)->income$ID
+  #income<-bsrc.findid(income,idmap = idmap,id.var = "ID")
   
   
   
@@ -121,31 +138,36 @@
   wtar<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$wtar_date, score=p2$data$wtar_s_adj)
  
   #EXIT
-    #grab EXIT from redcap
+    #grab EXIT from redcap and change ID
     exit<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$exit_date, score=p2$data$exit_total)
+    as.character(exit$ID)->exit$ID
+    exit<-bsrc.findid(exit,idmap = idmap,id.var = "ID")
+    exit[which(!is.na(exit$score)),]->exit
+    as.Date(exit$date)->exit$date
+    exit[-c(1,5:8)]->exit
     #grab EXIT from Access
     exit2<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_EXIT_S.csv")
     exit2[-c(3:15)]->exit2
-    #Change 88's to 43's
-    #exit2$ID[grepl("^88",exit2$ID)]<-paste("43", gsub("88","",exit2$ID[grepl("^88",exit2$ID)]), sep="")
-    mdy(exit2$CDate)->exit2$CDate
-    MCQwdemo$CDATE[match(exit2$ID, MCQwdemo$ID)]->exit2$MCQdate
+    #any scores over 97 means NA was involved, remove from total
+    exit2[which(exit2$EXITtot>97),"EXITtot"]<-NA
+    exit2[which(!is.na(exit2$EXITtot)),]->exit2
+    #Change IDS
+    as.Date(mdy(exit2$CDate))->exit2$CDate
+    exit2<-bsrc.findid(exit2,idmap = idmap,id.var = "ID")
+    exit2[which(exit2$ifexist==T),]->exit2
+    MCQwdemo$CDATE[match(exit2$masterdemoid, MCQwdemo$masterdemoid)]->exit2$MCQdate
     exit2[which(!is.na(exit2$MCQdate)),]->exit2
     exit2 %>% mutate(datedif=MCQdate-CDate)->exit2
-    exit2 %>% group_by(ID) %>% filter(datedif==min(abs(datedif)))->exit2
-    cutoff=365
+    exit2 %>% group_by(masterdemoid) %>% filter(datedif==min(abs(datedif)))->exit2
+    cutoff=547.5
     exit2[which(abs(exit2$datedif)<cutoff),]->exit2
+    exitold<-data.frame(masterdemoid=exit2$masterdemoid, date=exit2$CDate, score=exit2$EXITtot)
+    merge(exit, exitold, all=T)->test
     
-    <-function(x, y=MCQwdemo, z=MCQdate, cutoff){
-    mdy(x$CDate)->x$CDate
-    #x$ID[grepl("^88",x$ID)]<-paste("43", gsub("88","",x$ID[grepl("^88",x$ID)]), sep="")
-    y$CDATE[match(x$ID, y$ID)]->x$z
-    x[which(!is.na(x$consentdate))]->x
-    x %>% mutate(datedif=z-CDate)->x
-    x[which(abs(x$datedif)<cutoff),]->x
+    #exit2$MCQdate<-'1'
     
-  }
-  
+  old.date.match(x=exit2, y=MCQwdemo, cutoff=547.5)->exit2
+    
   #Grab HAM from redcap
   ham<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$ham_date, ham1=p2$data$ham_1_dm,
                   ham2=p2$data$ham_2_gf, ham3=p2$data$ham_3_su, ham4=p2$data$ham_4_ii, ham5=p2$data$ham_5_im,
