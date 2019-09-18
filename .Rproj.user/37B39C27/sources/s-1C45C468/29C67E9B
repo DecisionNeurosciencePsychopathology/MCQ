@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1568824009535.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4231342764",
+    "id" : "29C67E9B",
+    "lastKnownWriteTime" : 1568824047,
+    "last_content_update" : 1568824047075,
+    "path" : "~/MCQ/delay_discounting_df.R",
+    "project_path" : "delay_discounting_df.R",
+    "properties" : {
+        "cursorPosition" : "153,11",
+        "scrollLine" : "118",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
