@@ -13,17 +13,20 @@
      names(idmap)<-c("masterdemoid","wpicid","soloffid")
     #p2 map
      p2<-bsrc.checkdatabase2(protocol=ptcs$protect, online=T, batch_size=1000L)
-    #Fix id (if old id), then match dates of redcap/access to closest date to MCQ
+     #Fix id (if old id), then match dates of redcap/access to closest date to MCQ
      date.match<-function(x,y=MCQwdemo, id, cutoff){
-      if(!is.Date(x$date)){as.Date(mdy(x$date))->x$date}else{x$date=x$date}
-      if(id){x<-bsrc.findid(x,idmap = idmap,id.var = "ID")
-      x[which(x$ifexist),]->x}else{x->x}
-      y$CDATE[match(x$masterdemoid, y$masterdemoid)]->x$MCQdate
-      x[which(!is.na(x$MCQdate)),]->x
-      mutate(x, datedif=MCQdate-date)->x
-      x %>% group_by(masterdemoid) %>% filter(datedif==min(abs(datedif)))->x
-      x[which(abs(x$datedif)<cutoff),]->x
-      return(x)
+       if(!is.Date(x$date)){as.Date(mdy(x$date))->x$date}
+       if(id){x<-bsrc.findid(x,idmap = idmap,id.var = "ID")
+       x[which(x$ifexist),]->x}
+       y$CDATE[match(x$masterdemoid, y$masterdemoid)]->x$MCQdate
+       x[which(!is.na(x$MCQdate)),]->x
+       mutate(x, datedif=MCQdate-date)->x
+       x$datedif<-as.numeric(x$datedif)
+       xb<-do.call(rbind,lapply(split(x,x$masterdemoid),function(xa){
+         xa[which.min(abs(as.numeric(xa$datedif))),]
+       }))
+       xb[which(abs(as.numeric(xb$datedif))<cutoff),]->xc
+       return(xc)
      }
      
 #MCQdata  
@@ -105,8 +108,6 @@
   demo[-c(1:4,13)]->demo
   MCQwdemo[-which(is.na(MCQwdemo$consentdate)),]->MCQwdemo
   
-  
-  
   #Age at consent date (Must be 50+)
   as.Date(MCQwdemo$consentdate)->MCQwdemo$consentdate
   as.Date(MCQwdemo$DOB)->MCQwdemo$DOB
@@ -117,17 +118,22 @@
   ###############LEFT OFF HERE##################
   
   #Household income (from Macarthur SDQ)
+  #Redcap
   income<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$bq_date,
                      Event=p2$data$redcap_event_name, Income=p2$data$macarthur_6)
   income[which(income$Event=="baseline_arm_2"),]->income
   income[which(!is.na(income$Income)),]->income
-  #as.character(income$ID)->income$ID
-  #income<-bsrc.findid(income,idmap = idmap,id.var = "ID")
+  as.character(income$ID)->income$ID
+  income<-bsrc.findid(income,idmap = idmap,id.var = "ID")
+  income[-c(1,3,6:9)]->income
+  #Access
+  
   
   
   
   #Grab MMSE from redcap
   mmse<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$mmse_date, score=p2$data$mmse_s_adj)
+  mmse[which()]
   
 #Grab forms
   #grab DRS from redcap
@@ -137,6 +143,8 @@
   #grab WTAR from redcap
   wtar<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$wtar_date, score=p2$data$wtar_s_adj)
  
+  
+  
   #EXIT
     #grab EXIT from redcap and change ID
     exit<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$exit_date, score=p2$data$exit_total)
@@ -154,21 +162,21 @@
     #Date var
     exit2$CDate->exit2$date
     #Change IDS and date match
-    date.match(exit2, id=T, cutoff=547.5)->exit2
+    date.match(exit2, id=T, cutoff=600)->exit2
     #fix dates after date match
     as.character(exit2$date)->exit2$date
     as.character(exit$date)->exit$date
     #Make new df
     exitold<-data.frame(masterdemoid=exit2$masterdemoid, date=exit2$date, score=exit2$EXITtot,stringsAsFactors = F)
-    merge(exit, exitold, all=T)->EXIT
+    #rbind instead of merge (can't do this with duplicate data!!!!!!!!!)
+    rbind(exit,exitold)->EXIT
     as.Date(EXIT$date) -> EXIT$date
-    date.match(x=EXIT, id=F, cutoff = 547.5)
-    ->EXIT
+    date.match(x=EXIT, id=F, cutoff = 600)->EXIT
     
     #merge into demo
     EXIT$score->EXIT$exit_total
     EXIT[-c(1,2,4,5)]->EXIT
-    merge(EXIT, MCQwdemo, all=T)->MCQwdemo
+    merge(EXIT, MCQwdemo,all=T)->MCQwdemo
     
     
   
