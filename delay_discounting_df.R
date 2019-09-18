@@ -13,19 +13,18 @@
      names(idmap)<-c("masterdemoid","wpicid","soloffid")
     #p2 map
      p2<-bsrc.checkdatabase2(protocol=ptcs$protect, online=T, batch_size=1000L)
-    #Match dates of assessment to date of MCQ
-     old.date.match<-function(x, y=MCQwdemo, cutoff){
-      as.Date(mdy(x$CDate))->x$CDate
-      x<-bsrc.findid(x,idmap = idmap,id.var = "ID")
-      x[which(x$ifexist==T),]->x
+    #Fix id (if old id), then match dates of redcap/access to closest date to MCQ
+     date.match<-function(x,y=MCQwdemo, id, cutoff){
+      if(!is.Date(x$date)){as.Date(mdy(x$date))->x$date}else{x$date=x$date}
+      if(id){x<-bsrc.findid(x,idmap = idmap,id.var = "ID")
+      x[which(x$ifexist),]->x}else{x->x}
       y$CDATE[match(x$masterdemoid, y$masterdemoid)]->x$MCQdate
       x[which(!is.na(x$MCQdate)),]->x
-      mutate(x, datedif=MCQdate-CDate)->x
+      mutate(x, datedif=MCQdate-date)->x
       x %>% group_by(masterdemoid) %>% filter(datedif==min(abs(datedif)))->x
       x[which(abs(x$datedif)<cutoff),]->x
       return(x)
      }
-     
      
 #MCQdata  
   #get old MCQ data file
@@ -34,14 +33,14 @@
   MCQold<-bsrc.findid(MCQold,idmap = idmap,id.var = "ï..ID")
   MCQold[-c(1,9:12)]->MCQold
   #get new MCQ data file
-  MCQnew<-p2$data[c("registration_redcapid","redcap_event_name","mcq_1","mcq_2","mcq_3", "mcq_4", "mcq_5", "mcq_6",
+  MCQnew<-p2$data[c("registration_redcapid","redcap_event_name","bq_date","mcq_1","mcq_2","mcq_3", "mcq_4", "mcq_5", "mcq_6",
         "mcq_7","mcq_8","mcq_9","mcq_10","mcq_11","mcq_12","mcq_13","mcq_14",
         "mcq_15","mcq_16","mcq_17","mcq_18","mcq_19","mcq_20","mcq_21",
         "mcq_22","mcq_23","mcq_24","mcq_25","mcq_26","mcq_27","mcq_28","mcq_29","mcq_30")]
   MCQnew %>% filter(redcap_event_name=="baseline_arm_2")->MCQnew
   #Figure out MCQnew ids
   MCQnew<-bsrc.findid(MCQnew,idmap = idmap,id.var = "registration_redcapid")
-  MCQnew[-c(1, 2, 34:37)]->MCQnew
+  MCQnew[-c(1, 2, 35:38)]->MCQnew
   #Only grab new MCQ data from new dataset
   MCQnew[which(!MCQnew$masterdemoid %in% MCQold$ï..ID),]->MCQnewunique
   #remove missingness
@@ -49,16 +48,17 @@
   #Change names of variables
   names(MCQnewunique)<-paste("",gsub("mcq_","",names(MCQnewunique)))
   #Gather data
-  gather(MCQnewunique, key="Item", value = "Response",-` masterdemoid`)->MCQgather
+  gather(MCQnewunique, key="Item", value = "Response",-` masterdemoid`,-` bq_date`)->MCQgather
   #Match item level characteristics to new data
   items<-MCQold[1:30,2:5]
   as.numeric(MCQgather$Item)->MCQgather$Item
   merge(MCQgather, items, by="Item")->MCQgather
   #Fix old data
   mdy(MCQold$CDATE)->MCQold$CDATE
-  MCQold %>% group_by(masterdemoid) %>% filter(CDATE==min(CDATE)) %>%ungroup()->MCQold
+  #MCQold %>% group_by(masterdemoid) %>% filter(CDATE==min(CDATE)) %>%ungroup()->MCQold
   MCQgather$` masterdemoid`->MCQgather$masterdemoid
-  MCQgather[-2]->MCQgather
+  as.Date(MCQgather$` bq_date`)->MCQgather$CDATE
+  MCQgather[-c(2,3)]->MCQgather
   #Merge
   merge(MCQgather, MCQold, all=T)->finalMCQ
   #Remove terms
@@ -103,9 +103,9 @@
   demo %>% mutate(consentdate=pmin(demo$S1condate, demo$S2condate, demo$P2condate, 
                 demo$P1condate, na.rm=T))->demo
   demo[-c(1:4,13)]->demo
-  
-  merge(demo, finalMCQ, by="masterdemoid", all=T)->MCQwdemo
   MCQwdemo[-which(is.na(MCQwdemo$consentdate)),]->MCQwdemo
+  
+  
   
   #Age at consent date (Must be 50+)
   as.Date(MCQwdemo$consentdate)->MCQwdemo$consentdate
@@ -151,22 +151,27 @@
     #any scores over 97 means NA was involved, remove from total
     exit2[which(exit2$EXITtot>97),"EXITtot"]<-NA
     exit2[which(!is.na(exit2$EXITtot)),]->exit2
-    #Change IDS
-    as.Date(mdy(exit2$CDate))->exit2$CDate
-    exit2<-bsrc.findid(exit2,idmap = idmap,id.var = "ID")
-    exit2[which(exit2$ifexist==T),]->exit2
-    MCQwdemo$CDATE[match(exit2$masterdemoid, MCQwdemo$masterdemoid)]->exit2$MCQdate
-    exit2[which(!is.na(exit2$MCQdate)),]->exit2
-    exit2 %>% mutate(datedif=MCQdate-CDate)->exit2
-    exit2 %>% group_by(masterdemoid) %>% filter(datedif==min(abs(datedif)))->exit2
-    cutoff=547.5
-    exit2[which(abs(exit2$datedif)<cutoff),]->exit2
-    exitold<-data.frame(masterdemoid=exit2$masterdemoid, date=exit2$CDate, score=exit2$EXITtot)
-    merge(exit, exitold, all=T)->test
+    #Date var
+    exit2$CDate->exit2$date
+    #Change IDS and date match
+    date.match(exit2, id=T, cutoff=547.5)->exit2
+    #fix dates after date match
+    as.character(exit2$date)->exit2$date
+    as.character(exit$date)->exit$date
+    #Make new df
+    exitold<-data.frame(masterdemoid=exit2$masterdemoid, date=exit2$date, score=exit2$EXITtot,stringsAsFactors = F)
+    merge(exit, exitold, all=T)->EXIT
+    as.Date(EXIT$date) -> EXIT$date
+    date.match(x=EXIT, id=F, cutoff = 547.5)
+    ->EXIT
     
-    #exit2$MCQdate<-'1'
+    #merge into demo
+    EXIT$score->EXIT$exit_total
+    EXIT[-c(1,2,4,5)]->EXIT
+    merge(EXIT, MCQwdemo, all=T)->MCQwdemo
     
-  old.date.match(x=exit2, y=MCQwdemo, cutoff=547.5)->exit2
+    
+  
     
   #Grab HAM from redcap
   ham<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$ham_date, ham1=p2$data$ham_1_dm,
