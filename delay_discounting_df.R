@@ -1,44 +1,51 @@
-#MCQ data
+##library  
   library(tidyr)
   library(dplyr)
   library(lubridate)
   library(eeptools)
   library(na.tools)
+  ##functions
+    #startup
+    startup()
+    #ID map and master demo map
+     md<-bsrc.checkdatabase2(ptcs$masterdemo,forceskip = T,online = T,batch_size=1000L)
+     idmap<-md$data[c("registration_redcapid","registration_wpicid","registration_soloffid")]
+     names(idmap)<-c("masterdemoid","wpicid","soloffid")
+    #p2 map
+     p2<-bsrc.checkdatabase2(protocol=ptcs$protect, online=T, batch_size=1000L)
+#MCQdata  
   #get old MCQ data file
   MCQold<-read.csv(file ="C:/Users/buerkem/OneDrive - UPMC/Desktop/MCQ data/Copy of subjvalues_k.csv")
   #Change IDs on old MCQ data file
-  MCQold$ï..ID[grepl("^88",MCQold$ï..ID)]<-paste("43", gsub("88","",MCQold$ï..ID[grepl("^88",MCQold$ï..ID)]), sep="")
+  MCQold<-bsrc.findid(MCQold,idmap = idmap,id.var = "ï..ID")
+  MCQold[-c(1,9:12)]->MCQold
   #get new MCQ data file
-  startup()
-  p2<-bsrc.checkdatabase2(protocol=ptcs$protect, online=T, batch_size=1000L)
   MCQnew<-p2$data[c("registration_redcapid","redcap_event_name","mcq_1","mcq_2","mcq_3", "mcq_4", "mcq_5", "mcq_6",
         "mcq_7","mcq_8","mcq_9","mcq_10","mcq_11","mcq_12","mcq_13","mcq_14",
         "mcq_15","mcq_16","mcq_17","mcq_18","mcq_19","mcq_20","mcq_21",
         "mcq_22","mcq_23","mcq_24","mcq_25","mcq_26","mcq_27","mcq_28","mcq_29","mcq_30")]
   MCQnew %>% filter(redcap_event_name=="baseline_arm_2")->MCQnew
+  #Figure out MCQnew ids
+  MCQnew<-bsrc.findid(MCQnew,idmap = idmap,id.var = "registration_redcapid")
+  MCQnew[-c(1, 2, 34:37)]->MCQnew
   #Only grab new MCQ data from new dataset
-  MCQnew[which(!MCQnew$registration_redcapid %in% MCQold$ï..ID),]->MCQnewunique
+  MCQnew[which(!MCQnew$masterdemoid %in% MCQold$ï..ID),]->MCQnewunique
   #remove missingness
   MCQnewunique[-which(rowMeans(is.na(MCQnewunique))>0.5),]->MCQnewunique
   #Change names of variables
   names(MCQnewunique)<-paste("",gsub("mcq_","",names(MCQnewunique)))
-  MCQnewunique$` registration_redcapid`->MCQnewunique$ID
-  MCQnewunique[-c(1:2)]->MCQnewunique
   #Gather data
-  gather(MCQnewunique, key="Item", value = "Response",-ID)->MCQgather
+  gather(MCQnewunique, key="Item", value = "Response",-` masterdemoid`)->MCQgather
   #Match item level characteristics to new data
-  items<-MCQold[1:30,3:6]
+  items<-MCQold[1:30,2:5]
   as.numeric(MCQgather$Item)->MCQgather$Item
   merge(MCQgather, items, by="Item")->MCQgather
   #Fix old data
-  MCQold$ï..ID->MCQold$ID
   mdy(MCQold$CDATE)->MCQold$CDATE
-  MCQold %>% group_by(ID) %>% filter(CDATE==min(CDATE)) %>%ungroup()->MCQold
+  MCQold %>% group_by(masterdemoid) %>% filter(CDATE==min(CDATE)) %>%ungroup()->MCQold
   #Merge
   merge(MCQgather, MCQold, all=T)->finalMCQ
-  finalMCQ[-7]->finalMCQ
   #Remove terms
-  md<- bsrc.checkdatabase2(protocol=ptcs$masterdemo, online=T, batch_size=1000L)
   terms<-data.frame(ID=md$data$registration_redcapid, P2condate=md$data$reg_condate_protect2, 
            P1condate=md$data$reg_condate_protect, S2condate=md$data$reg_condate_suicid2,
            S1condate=md$data$reg_condate_suicide, excludep2=md$data$reg_term_excl_protect2,
@@ -48,12 +55,13 @@
            terms1=md$data$reg_term_reason_suicide)
   terms %>% filter(P2condate!=""| P1condate!="" |S2condate!=""|S1condate!="")->terms
   terms %>% filter(excludep2==1 | excludep1==1 | excludes2==1 |excludes1==1|termp2==3|
-                   termp1==3 | terms2==3 | terms1==3)->terms           
-  terms[which(terms$ID %in% unique(finalMCQ[which(finalMCQ$ID %in% terms$ID),"ID"])),]->MCQterms
-  finalMCQ[which(!finalMCQ$ID %in% MCQterms$ID),]->finalMCQ
-
+                   termp1==3 | terms2==3 | terms1==3)->terms
+  terms<-bsrc.findid(terms,idmap = idmap,id.var = "ID")
+  terms[which(terms$masterdemoid %in% unique(finalMCQ[which(finalMCQ$masterdemoid %in% terms$masterdemoid),"ID"])),]->MCQterms
+  finalMCQ[which(!finalMCQ$masterdemoid %in% MCQterms$masterdemoid),]->finalMCQ
+#######LEFT OFF HERE##############
 #Grab demo info from redcap
-  demo<-data.frame(ID=md$data$registration_redcapid, P2condate=md$data$reg_condate_protect2, 
+  demo<-data.frame(registration_redcapid=md$data$registration_redcapid, P2condate=md$data$reg_condate_protect2, 
            P1condate=md$data$reg_condate_protect, S2condate=md$data$reg_condate_suicid2,
            S1condate=md$data$reg_condate_suicide, DOB=md$data$registration_dob,
            group=md$data$registration_group, gender=md$data$registration_gender,
@@ -62,14 +70,16 @@
            '5'=md$data$registration_race___5, na=md$data$registration_race___999,
            ethnicity=md$data$registration_hispanic, edu=md$data$registration_edu,
            marital=md$data$registration_marrs)
+  #IDmap
+  demo<-bsrc.findid(demo,idmap = idmap,id.var = "registration_redcapid")
   #Only ppl in finalMCQ
-  demo[which(demo$ID %in% finalMCQ$ID),]->demo
+  demo[which(demo$masterdemoid %in% finalMCQ$masterdemoid),]->demo
   #fix race (X6=multiple races)
-  demo %>% gather(key="race", value = "value", -c(ID, P2condate, P1condate, 
+  demo %>% gather(key="race", value = "value", -c(masterdemoid, P2condate, P1condate, 
            S1condate, S2condate, DOB, group, gender, edu, ethnicity, marital))->demo
   demo %>% filter(value==1)->demo
-  demo[which(duplicated(demo$ID)),"ID"]->mraceid
-  demo[which(demo$ID %in% mraceid),"race"]<-"X6"
+  demo[which(duplicated(demo$masterdemoid)),"masterdemoid"]->mraceid
+  demo[which(demo$masterdemoid %in% mraceid),"race"]<-"X6"
   #fix consent date
   as.Date(demo$P2condate)->demo$P2condate
   as.Date(ymd(demo$S2condate))->demo$S2condate
@@ -77,8 +87,8 @@
   as.Date(ymd(demo$S1condate))->demo$S1condate
   demo %>% mutate(consentdate=pmin(demo$S1condate, demo$S2condate, demo$P2condate, 
                 demo$P1condate, na.rm=T))->demo
-  demo[-c(2:5,13)]->demo
-  merge(demo, finalMCQ, by="ID", all=T)->MCQwdemo
+  demo[-c(1:4,13)]->demo
+  merge(demo, finalMCQ, by="masterdemoid", all=T)->MCQwdemo
   MCQwdemo[-which(is.na(MCQwdemo$consentdate)),]->MCQwdemo
   
   #Age at consent date (Must be 50+)
@@ -117,17 +127,22 @@
     exit2<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_EXIT_S.csv")
     exit2[-c(3:15)]->exit2
     #Change 88's to 43's
-    exit2$ID[grepl("^88",exit2$ID)]<-paste("43", gsub("88","",exit2$ID[grepl("^88",exit2$ID)]), sep="")
+    #exit2$ID[grepl("^88",exit2$ID)]<-paste("43", gsub("88","",exit2$ID[grepl("^88",exit2$ID)]), sep="")
     mdy(exit2$CDate)->exit2$CDate
-    MCQwdemo$consentdate[match(exit2$ID, MCQwdemo$ID)]->exit2$consentdate
-    exit2[which(!is.na(exit2$consentdate)),]->exit2
-    exit2 %>% mutate(datedif=consentdate-CDate)->exit2
+    MCQwdemo$CDATE[match(exit2$ID, MCQwdemo$ID)]->exit2$MCQdate
+    exit2[which(!is.na(exit2$MCQdate)),]->exit2
+    exit2 %>% mutate(datedif=MCQdate-CDate)->exit2
+    exit2 %>% group_by(ID) %>% filter(datedif==min(abs(datedif)))->exit2
+    cutoff=365
+    exit2[which(abs(exit2$datedif)<cutoff),]->exit2
     
-    <-function(x, y){
-    mdy(x$CDATE)->x$CDATE
-    x$ID[grepl("^88",x$ID)]<-paste("43", gsub("88","",x$ID[grepl("^88",x$ID)]), sep="")
-    y$consentdate[match(x$ID, y$ID)]->x$consentdate
+    <-function(x, y=MCQwdemo, z=MCQdate, cutoff){
+    mdy(x$CDate)->x$CDate
+    #x$ID[grepl("^88",x$ID)]<-paste("43", gsub("88","",x$ID[grepl("^88",x$ID)]), sep="")
+    y$CDATE[match(x$ID, y$ID)]->x$z
     x[which(!is.na(x$consentdate))]->x
+    x %>% mutate(datedif=z-CDate)->x
+    x[which(abs(x$datedif)<cutoff),]->x
     
   }
   
