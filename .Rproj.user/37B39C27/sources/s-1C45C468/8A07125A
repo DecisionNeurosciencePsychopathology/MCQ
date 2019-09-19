@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1568926423385.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "8A07125A",
+    "lastKnownWriteTime" : 2442850050648,
+    "last_content_update" : 1568926423385,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "768C482C",
+        "caption" : "MCQold",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=MCQold&cache_key=768C482C",
+        "displayedObservations" : 17160,
+        "environment" : "",
+        "expression" : "MCQold",
+        "object" : "MCQold",
+        "preview" : 0,
+        "totalObservations" : 17160,
+        "variables" : 8
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

@@ -1,0 +1,37 @@
+function (df, idmap = NULL, id.var = "ID", onlyoutput = NULL) 
+{
+    cleanmap <- idmap
+    if (!missing(df)) {
+        t <- lapply(df[[id.var]], function(id) {
+            pos <- as.data.frame(which(cleanmap == id, arr.ind = T))
+            dx <- idmap[unique(pos$row), ]
+            if (length(dx[[1]]) > 0) {
+                dx$ogid <- id
+                dx$ifexist <- TRUE
+                return(dx)
+            }
+            else {
+                dk <- data.frame(matrix(ncol = length(names(idmap)), 
+                  nrow = 1))
+                names(dk) <- names(idmap)
+                dk$ogid <- id
+                dk$ifexist <- FALSE
+                return(dk)
+            }
+        })
+        names(t) <- df[[id.var]]
+        if (any(sapply(t, nrow) > 1)) {
+            message("Duplicated ID map entry found for singular ID, terminate and return list of ID identified.")
+            return(t[sapply(t, nrow) == 2])
+        }
+        tx <- do.call(rbind, t)
+        if (!is.null(onlyoutput)) {
+            tx <- tx[c(onlyoutput)]
+        }
+        lx <- cbind(df, tx)
+        return(lx)
+    }
+    else {
+        return(idmap)
+    }
+}

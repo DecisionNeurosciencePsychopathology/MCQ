@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1568927351085.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "D371F848",
+    "lastKnownWriteTime" : 2482453594007806574,
+    "last_content_update" : 1568927351085,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "958E3973",
+        "caption" : "drs",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=drs&cache_key=958E3973",
+        "displayedObservations" : "132",
+        "environment" : "",
+        "expression" : "drs",
+        "object" : "drs",
+        "preview" : "0",
+        "totalObservations" : "132",
+        "variables" : "10"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 14,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

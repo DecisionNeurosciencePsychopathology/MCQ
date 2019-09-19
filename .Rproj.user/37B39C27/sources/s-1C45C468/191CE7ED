@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1568927716647.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "191CE7ED",
+    "lastKnownWriteTime" : 2481042943426913650,
+    "last_content_update" : 1568927716647,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "96005210",
+        "caption" : "drsold",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=drsold&cache_key=96005210",
+        "displayedObservations" : "8543",
+        "environment" : "",
+        "expression" : "drsold",
+        "object" : "drsold",
+        "preview" : "0",
+        "totalObservations" : "8543",
+        "variables" : "50"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 15,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
