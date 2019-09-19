@@ -115,25 +115,37 @@
   MCQwdemo[which(MCQwdemo$bl.age>49),]->MCQwdemo
     #Number of pts: sum(table(unique(MCQwdemo$masterdemoid)))
   
-  ###############LEFT OFF HERE##################
-  
-  #Household income (from Macarthur SDQ)
+#Household income (from Macarthur SDQ)
   #Redcap
   income<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$bq_date,
                      Event=p2$data$redcap_event_name, Income=p2$data$macarthur_6)
   income[which(income$Event=="baseline_arm_2"),]->income
   income[which(!is.na(income$Income)),]->income
   as.character(income$ID)->income$ID
-  income<-bsrc.findid(income,idmap = idmap,id.var = "ID")
-  income[-c(1,3,6:9)]->income
+  income[which(income$Income>10),"Income"]<-NA
+  as.Date(income$date)->income$date
+  date.match(x=income,y=MCQwdemo, id=T, cutoff=365)->income
+  income[-c(1,3,6:11)]->income
   #Access
-  
+  Macarthur<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_SES.csv")
+  Macarthur[c(1, 2, 19)]->Macarthur
+  na.rm(Macarthur)->Macarthur
+  Macarthur$CDATE->Macarthur$date
+  date.match(x=Macarthur, id=T, cutoff=365)->Macarthur
+  Macarthur<-data.frame(masterdemoid=Macarthur$masterdemoid, date=Macarthur$date, Income=Macarthur$Q6,stringsAsFactors = F)
+  rbind(Macarthur,income)->Incomedf
+  date.match(x=Incomedf, id=F, cutoff=365)->Incomedf
+  Incomedf$Income[match(MCQwdemo$masterdemoid, Incomedf$masterdemoid)]->MCQwdemo$income
   
   
   
   #Grab MMSE from redcap
   mmse<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$mmse_date, score=p2$data$mmse_s_adj)
-  mmse[which()]
+  mmse[which(!is.na(mmse$score)),]->mmse
+  as.character(mmse$ID)->mmse$ID
+  as.Date(mmse$date)->mmse$date
+  date.match(x=mmse,y=MCQwdemo, id=T, cutoff=365)->income
+  income[-c(1,3,6:11)]->income
   
 #Grab forms
   #grab DRS from redcap
@@ -220,7 +232,7 @@
   
   #Date of first attempt and highest lethality
   suihx %>% group_by(registration_redcapid) %>% mutate(firstattrc=min(na.omit(sahx_sadate)))->suihx
-  suihx %>% group_by(registration_redcapid) %>% mutate(maxlethrc=max(na.rm(sahx_lr)))->suihx
+  suihx %>% group_by(registration_redcapid) %>% mutate(maxlethrc=max(na.omit(sahx_lr)))->suihx
   suihx[c(1,4,5)]->suihx
   
   #Access suicide hx at followups
@@ -280,14 +292,25 @@
     as.data.frame(suihxrc)->suihxrc
     bsrc.findid(suihxrc,idmap = idmap,id.var = "registration_redcapid")->suihxrc
     suihxrc[c(2,3,4)]->suihxrc
-    ACsuihx[which(!duplicated(ACsuihx)),]->ACsuihx
+    ACsuihx %>% group_by(ID) %>% filter(row_number()==1)->ACsuihx
     as.data.frame(ACsuihx)->ACsuihx
-    bsrc.findid(ACsuihx,idmap = idmap,id.var = "ID")->ACsuihx
+    as.data.frame(bsrc.findid(ACsuihx,idmap = idmap,id.var = "ID"))->ACsuihx
     ACsuihx[which(ACsuihx$ifexist==T),]->ACsuihx
     ACsuihx[c(2,3,4)]->ACsuihx
-  #Merge and get vars  
+    row.names(ACsuihx)<-NULL
+  #Merge and get vars
+    suihxrc %>% group_by(masterdemoid) %>% filter(row_number()==1)->suihxrc
+    as.data.frame(suihxrc)->suihxrc
     merge(ACsuihx,suihxrc, by="masterdemoid")->lethandfirstatt
-    gather(lethandfirstatt, key="key", value="date",-masterdemoid, -ACmaxleth)
+    as.numeric(lethandfirstatt$maxlethrc)->lethandfirstatt$maxlethrc
+    as.character(lethandfirstatt$firstattrc)->lethandfirstatt$firstattrc
+    as.character(lethandfirstatt$ACfirstatt)->lethandfirstatt$ACfirstatt
+    apply(lethandfirstatt[c(3,4)],1,min,na.rm=T)->lethandfirstatt$firstatt
+    apply(lethandfirstatt[c(2,5)],1,min,na.rm=T)->lethandfirstatt$mlatt
+    #combine with demo df
+    lethandfirstatt[which(lethandfirstatt$masterdemoid %in% MCQwdemo$masterdemoid),]->lethandfirstatt
+    lethandfirstatt$mlatt[match(MCQwdemo$masterdemoid, lethandfirstatt$masterdemoid)]->MCQwdemo$mlatt
+    
     
   
   
