@@ -162,7 +162,7 @@
     #Date var
     exit2$CDate->exit2$date
     #Change IDS and date match
-    date.match(exit2, id=T, cutoff=600)->exit2
+    date.match(exit2, id=T, cutoff=550)->exit2
     #fix dates after date match
     as.character(exit2$date)->exit2$date
     as.character(exit$date)->exit$date
@@ -171,7 +171,7 @@
     #rbind instead of merge (can't do this with duplicate data!!!!!!!!!)
     rbind(exit,exitold)->EXIT
     as.Date(EXIT$date) -> EXIT$date
-    date.match(x=EXIT, id=F, cutoff = 600)->EXIT
+    date.match(x=EXIT, id=F, cutoff = 550)->EXIT
     #merge into demo
     EXIT$score->EXIT$exit_total
     EXIT[-c(1,2,4,5)]->EXIT
@@ -218,8 +218,77 @@
   suihx$sahx_describe<-NULL
   suihx %>% filter(!is.na(sahx_lr)| !is.na(sahx_sadate))->suihx
   
+  #Date of first attempt and highest lethality
+  suihx %>% group_by(registration_redcapid) %>% mutate(firstattrc=min(na.omit(sahx_sadate)))->suihx
+  suihx %>% group_by(registration_redcapid) %>% mutate(maxlethrc=max(na.rm(sahx_lr)))->suihx
+  suihx[c(1,4,5)]->suihx
   
- 
+  #Access suicide hx at followups
+  negout<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_NEGOUT.csv")
+  negout[c(1,9,10,12,13,15, 20:23)]->negout
+    #fix dates
+    mdy(negout$DATE1)->negout$DATE1
+    mdy(negout$DATE2)->negout$DATE2
+    mdy(negout$DATE3)->negout$DATE3
+    mdy(negout$ATTDATE)->negout$ATTDATE
+    mdy(negout$ATTDATE2)->negout$ATTDATE2
+    mdy(negout$ATTDATE3)->negout$ATTDATE3
+    mdy(negout$ATTDATE4)->negout$ATTDATE4
+    #gather dates
+    gather(negout, key="Att", value = "Date",-ID, -SUI1, -SUI2)->negout
+    negout[-4]->negout
+    negout %>% group_by(ID) %>% mutate(firstattfu=min(na.omit(Date)))->negout
+    #gather lethalities  
+    gather(negout, key = "Att", value="Lethality",-ID, -Date,-firstattfu)->negout
+    suique[which(negout$Lethality>9),"Lethality"]<-NA
+    negout %>% group_by(ID) %>% mutate(maxlethfu=max(na.omit(Lethality)))->negout
+    negout[which(negout$maxlethfu<0),"maxlethfu"]<-NA
+    negout[-c(2,4,5)]->negout
+  #Suicide hx at baseline
+  suique<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_SQUEST.csv")
+  suique[c(1,14,16,18,20,22,23,25,26,28,29,31,32,34,35)]->suique
+    #fix dates
+    mdy(suique$MRATTMPT)->suique$MRATTMPT
+    mdy(suique$MLDATE)->suique$MLDATE
+    mdy(suique$DATE1)->suique$DATE1
+    mdy(suique$DATE2)->suique$DATE2
+    mdy(suique$DATE3)->suique$DATE3
+    mdy(suique$DATE4)->suique$DATE4
+    mdy(suique$DATE5)->suique$DATE5
+    #gather dates
+    gather(suique, key="Att", value="Date",-ID, -LETHMR,-LETHML,-LETH1,-LETH2,-LETH3,-LETH4,-LETH5)->suique
+    suique[-9]->suique
+    #gather lethality
+    gather(suique, key="Att", value="Lethality", -ID, -Date)->suique
+    suique[-3]->suique
+    suique[which(suique$Lethality>9),"Lethality"]<-NA
+    #First att and max leth
+    suique %>% group_by(ID) %>% mutate(maxlethbl=max(na.omit(Lethality)))->suique
+    suique[which(suique$maxlethbl<0),"maxlethbl"]<-NA
+    suique %>% group_by(ID)%>% mutate(firstattbl=min(na.omit(Date)))->suique
+    suique[-c(2,3)]->suique
+  #Combine bl and fu in Access
+    rbind(negout,suique)->ACsuihx
+    gather(ACsuihx, key="key", value="lethality",-ID, -firstattfu,-firstattbl)->ACsuihx
+    gather(ACsuihx,key="key2", value="date",-ID, -key,-lethality)->ACsuihx
+    ACsuihx %>% group_by(ID) %>% mutate(ACmaxleth=max(na.omit(lethality)))->ACsuihx
+    ACsuihx[which(ACsuihx$ACmaxleth<0),"ACmaxleth"]<-NA
+    ACsuihx %>% group_by(ID) %>% mutate(ACfirstatt=min(na.omit(date)))->ACsuihx
+    ACsuihx[c(1,6,7)]->ACsuihx
+   #Fix IDs on both forms
+    suihx->suihxrc
+    as.data.frame(suihxrc)->suihxrc
+    bsrc.findid(suihxrc,idmap = idmap,id.var = "registration_redcapid")->suihxrc
+    suihxrc[c(2,3,4)]->suihxrc
+    ACsuihx[which(!duplicated(ACsuihx)),]->ACsuihx
+    as.data.frame(ACsuihx)->ACsuihx
+    bsrc.findid(ACsuihx,idmap = idmap,id.var = "ID")->ACsuihx
+    ACsuihx[which(ACsuihx$ifexist==T),]->ACsuihx
+    ACsuihx[c(2,3,4)]->ACsuihx
+  #Merge and get vars  
+    merge(ACsuihx,suihxrc, by="masterdemoid")->lethandfirstatt
+    gather(lethandfirstatt, key="key", value="date",-masterdemoid, -ACmaxleth)
+    
   
   
   
