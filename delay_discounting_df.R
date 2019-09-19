@@ -56,12 +56,7 @@
   demo[-c(1:4,13)]->demo
   demo[-which(is.na(demo$consentdate)),]->demo
   
-  #Age at consent date (Must be 50+)
-  #as.Date(MCQwdemo$consentdate)->MCQwdemo$consentdate
-  #as.Date(MCQwdemo$DOB)->MCQwdemo$DOB
-  #MCQwdemo %>% mutate(bl.age=age_calc(DOB,enddate = consentdate, units="years", precise=F))->MCQwdemo
-  #MCQwdemo[which(MCQwdemo$bl.age>49),]->MCQwdemo
-    #Number of pts: sum(table(unique(MCQwdemo$masterdemoid)))  
+   
 
 #MCQdata  
   #Access MCQ
@@ -119,7 +114,14 @@
   
 #Add demo info
   demo[which(demo$masterdemoid %in% finalMCQ$masterdemoid),]->demo
+  finalMCQ$consentdate<-NULL
   merge(demo, finalMCQ, by="masterdemoid")->MCQwdemo
+#Age at consent date (Must be 50+)
+  as.Date(MCQwdemo$consentdate)->MCQwdemo$consentdate
+  as.Date(MCQwdemo$DOB)->MCQwdemo$DOB
+  MCQwdemo %>% mutate(bl.age=age_calc(DOB,enddate = consentdate, units="years", precise=F))->MCQwdemo
+  MCQwdemo[which(MCQwdemo$bl.age>49),]->MCQwdemo
+  
   
   
 #Household income (from Macarthur SDQ)
@@ -233,7 +235,8 @@
     EXIT$score[match(MCQwdemo$masterdemoid, EXIT$masterdemoid)]->MCQwdemo$exit_score
   
 #HAM
-  ham<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$ham_date, ham1=p2$data$ham_1_dm,
+  #Redcap
+    ham<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$ham_date, ham1=p2$data$ham_1_dm,
                   ham2=p2$data$ham_2_gf, ham3=p2$data$ham_3_su, ham4=p2$data$ham_4_ii, ham5=p2$data$ham_5_im,
                   ham6=p2$data$ham_6_di, ham7=p2$data$ham_7_wi, ham8=p2$data$ham_8_re,
                   ham9=p2$data$ham_9_ag, ham10=p2$data$ham_10_psya, ham11=p2$data$ham_11_soma,
@@ -242,8 +245,31 @@
                   ham18=p2$data$ham_18_rt, ham19=p2$data$ham_19_dp,ham20=p2$data$ham_20_prsx,
                   ham21=p2$data$ham_21_ocsx,ham22=p2$data$ham_22_xhelp, ham23=p2$data$ham_23_xhope,
                   ham24=p2$data$ham_24_xworth)
-  
-  
+    rowSums(ham[3:19])->ham$ham17score
+    rowSums(ham[3:26])->ham$ham24score
+    ham[which(!is.na(ham$ham17score) | !is.na(ham$ham24score)),]->ham
+    as.character(ham$ID)->ham$ID
+    as.Date(ham$date)->ham$date
+    date.match(x=ham,y=MCQwdemo, id=T, cutoff=30)->ham
+    ham[c(2,27:29)]->ham
+  #Access
+    ham17old<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_HRSD.csv")
+    ham24old<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_HRSD_24.csv")
+    rowSums(ham17old[5:21])->ham17old$ham17score
+    rowSums(ham24old[5:34])->ham24old$ham24score
+    rowSums(ham24old[5:26])->ham24old$ham17score
+    ham17old[c(1,2,27)]->ham17old
+    ham24old[c(1,2,41,42)]->ham24old
+    na.rm(ham17old)->ham17old
+    ham24old[which(!is.na(ham24old$ham24score) | !is.na(ham24old$ham17score)),]->ham24old
+    mdy(ham17old$CDATE)->ham17old$date
+    mdy(ham24old$CDATE)->ham24old$date
+    date.match(x=ham17old, id=T, cutoff=30)->ham17old
+    date.match(x=ham24old, id=T, cutoff=30)->ham24old
+    ham17old[c(3,4,5)]->ham17old
+    ham24old[c(3,4,5,6)]->ham24old
+    merge(ham17old,ham24old, by=c("masterdemoid","date","ham17score"), all=T)->hamold
+  ###########LEFT OFF ON HAM
   
   
   #Grab suicide hx from redcap (Jiazhou's help)
