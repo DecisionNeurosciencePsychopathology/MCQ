@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569266081533.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "1E138EF4",
+    "lastKnownWriteTime" : 7957695011165139568,
+    "last_content_update" : 1569266081533,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "443DB894",
+        "caption" : "mldates",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=mldates&cache_key=443DB894",
+        "displayedObservations" : 124,
+        "environment" : "",
+        "expression" : "mldates",
+        "object" : "mldates",
+        "preview" : 0,
+        "totalObservations" : 124,
+        "variables" : 2
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

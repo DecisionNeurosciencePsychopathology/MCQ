@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569263305837.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "2B8BAF22",
+    "lastKnownWriteTime" : 7598543875853023333,
+    "last_content_update" : 1569263305837,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "E51B0FD2",
+        "caption" : "ssiold2",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=ssiold2&cache_key=E51B0FD2",
+        "displayedObservations" : 15583,
+        "environment" : "",
+        "expression" : "ssiold2",
+        "object" : "ssiold2",
+        "preview" : 0,
+        "totalObservations" : 15583,
+        "variables" : 23
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 11,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

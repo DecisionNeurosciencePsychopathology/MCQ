@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569265781125.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "21437DA3",
+    "lastKnownWriteTime" : 8026363914660965410,
+    "last_content_update" : 1569265781125,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "5E63ADC3",
+        "caption" : "suihx",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=suihx&cache_key=5E63ADC3",
+        "displayedObservations" : "197",
+        "environment" : "",
+        "expression" : "suihx",
+        "object" : "suihx",
+        "preview" : "0",
+        "totalObservations" : "197",
+        "variables" : "6"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
