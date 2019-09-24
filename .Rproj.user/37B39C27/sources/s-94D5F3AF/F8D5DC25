@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569263564532.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "F8D5DC25",
+    "lastKnownWriteTime" : 2314885436531619382,
+    "last_content_update" : 1569263564532,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "C08B21A2",
+        "caption" : "ssi",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=ssi&cache_key=C08B21A2",
+        "displayedObservations" : "185",
+        "environment" : "",
+        "expression" : "ssi",
+        "object" : "ssi",
+        "preview" : "0",
+        "totalObservations" : "185",
+        "variables" : "3"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 9,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

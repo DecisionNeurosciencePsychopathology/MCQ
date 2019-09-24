@@ -47,7 +47,7 @@
      date.match.sis<-function(x,y=MCQwdemo, id, cutoff){
        if(!is.Date(x$date)){as.Date(mdy(x$date))->x$date}
        if(id){x<-bsrc.findid(x,idmap = idmap,id.var = "ID")
-       x[which(x$ifexist)=T,]->x}
+       x[which(x$ifexist),]->x}
        y$mldate[match(x$masterdemoid, y$masterdemoid)]->x$mldate
        x[which(!is.na(x$mldate)),]->x
        mutate(x, datedif=mldate-date)->x
@@ -194,13 +194,15 @@
     ssiold2<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_SIS_2.csv")
     ssiold1$CDATE->ssiold1$date
     ssiold2$CDATE->ssiold2$date
-  date.match.ssi(x=ssiold1,y=MCQwdemo, id=T, cutoff=365)->ssiold1
-  date.match.ssi(x=ssiold2,y=MCQwdemo, id=T, cutoff=365)->ssiold2
-  ssiold1[c(7:11,17,18)]->ssiold1
-  ssiold2[c(5:18, 24, 25)]->ssiold2
-  merge(ssiold1, ssiold2, by="masterdemoid")->ssiold
+    date.match.ssi(x=ssiold1,y=MCQwdemo, id=T, cutoff=365)->ssiold1
+    date.match.ssi(x=ssiold2,y=MCQwdemo, id=T, cutoff=365)->ssiold2
+    #worst at BL
+    ssiold1[which(ssiold1$TIMEFRM==1),]->ssiold1
+    ssiold2[which(ssiold2$TIMEFRM==1),]->ssiold2
+    ssiold1[c(7:11,17,18)]->ssiold1
+    ssiold2[c(5:18, 24, 25)]->ssiold2
+    merge(ssiold1, ssiold2, by="masterdemoid")->ssiold
     #removed one person for ssi dates being too mismatched
-    ssiold[153,]<-NA
   ssiold[which(ssiold$Q6==5),"Q6"]<-NA
   ssiold[which(ssiold$Q7==5),"Q7"]<-NA
   ssiold[which(ssiold$Q8==5),"Q8"]<-NA
@@ -530,9 +532,15 @@
                         mmse.score=MCQwdemo$mmse_score, drs.score=MCQwdemo$drs_score, wtar.score=MCQwdemo$wtar_score,
                         exit.score=MCQwdemo$exit_score, highest_lethality=MCQwdemo$mlatt, age.firstatt=MCQwdemo$age_1statt)
   
-  
-  
-  #Write data to file
-#library(xlsx)           
-#write.xlsx(finalMCQ,"C:/Users/buerkem/Box/skinner/finalMCQ.xlsx")
+  #CURRENTLY remove bad ids
+    #badids
+    Finaldf[which(!Finaldf$ID %in% badids),]->Finaldf
+  #Add variable for who is in Dombrovski 2011 paper
+    dom2011<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/Dombrovski 2011 subs.csv")
+    as.numeric(gsub(",","",as.character(dom2011$ID)))->dom2011$ID
+    bsrc.findid(dom2011,idmap = idmap,id.var = "ID")->dom2011
+    Finaldf %>% mutate(overlap=ifelse(Finaldf$ID %in% dom2011$masterdemoid,1,0))->Finaldf
+
+#Write data to file
+write.csv(Finaldf,"C:/Users/buerkem/Box/skinner/data/delay discounting/MCQwithdemo.csv")
            
