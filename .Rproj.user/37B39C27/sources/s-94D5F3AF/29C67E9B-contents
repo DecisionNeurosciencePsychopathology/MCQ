@@ -411,7 +411,7 @@
     negout %>% group_by(ID) %>% mutate(firstattfu=min(na.omit(Date)))->negout
     #gather lethalities  
     gather(negout, key = "Att", value="Lethality",-ID, -Date,-firstattfu)->negout
-    suique[which(negout$Lethality>9),"Lethality"]<-NA
+    negout[which(negout$Lethality>9),"Lethality"]<-NA
     negout %>% group_by(ID) %>% mutate(maxlethfu=max(na.omit(Lethality)))->negout
     negout[which(negout$maxlethfu<0),"maxlethfu"]<-NA
     negout[which(negout$maxlethfu==negout$Lethality),c("ID","Date")]->oldmldates
