@@ -12,16 +12,16 @@
     "path" : null,
     "project_path" : null,
     "properties" : {
-        "cacheKey" : "E4592933",
+        "cacheKey" : "513210C8",
         "caption" : "sisold",
-        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=sisold&cache_key=E4592933",
-        "displayedObservations" : 71,
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=sisold&cache_key=513210C8",
+        "displayedObservations" : "108",
         "environment" : "",
         "expression" : "sisold",
         "object" : "sisold",
-        "preview" : 0,
-        "totalObservations" : 71,
-        "variables" : 4
+        "preview" : "0",
+        "totalObservations" : "108",
+        "variables" : "4"
     },
     "read_only" : false,
     "read_only_alternatives" : [

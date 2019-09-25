@@ -49,13 +49,15 @@
        if(id){x<-bsrc.findid(x,idmap = idmap,id.var = "ID")
        x[which(x$ifexist),]->x}
        y$mldate[match(x$masterdemoid, y$masterdemoid)]->x$mldate
+       y$consentdate[match(x$masterdemoid, y$masterdemoid)]->x$consentdate
        x[which(!is.na(x$mldate)),]->x
        mutate(x, datedif=mldate-date)->x
        x$datedif<-as.numeric(x$datedif)
        xb<-do.call(rbind,lapply(split(x,x$masterdemoid),function(xa){
          xa[which.min(as.numeric(xa$datedif)),]
        }))
-       xb[which(abs(as.numeric(xb$datedif))<cutoff),]->xc
+       xb %>% mutate(bl=ifelse(xb$mldate<xb$consentdate, 1, 0))->xb
+       xb[which(xb$bl==1 | abs(as.numeric(xb$datedif))<cutoff),]->xc
        return(xc)
        }
 #Grab demo info from redcap
@@ -499,7 +501,7 @@
   sis[which(!is.na(sis$sis_score)),]->sis
   as.character(sis$ID)->sis$ID
   as.Date(sis$date)->sis$date
-  date.match.sis(x=sis,y=MCQwdemo, id=T, cutoff=90)->sis
+  date.match.sis(x=sis,y=MCQwdemo, id=T, cutoff=190)->sis
   sis[c(2:5)]->sis
   #Access
   sisold<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_SINT.csv")
@@ -512,13 +514,13 @@
   rowSums(sisold[6:13])->sisold$planningsub
   sisold$CDATE->sisold$date
   as.data.frame(sisold)->sisold
-  date.match.sis(x=sisold, y=MCQwdemo, id=T, cutoff=90)->sisold
+  date.match.sis(x=sisold, y=MCQwdemo, id=T, cutoff=190)->sisold
   sisold[c(49:52)]->sisold
   #Combine
   sis<-data.frame(masterdemoid=sis$masterdemoid, date=sis$date, planningsub=sis$sis_plan,
                   score=sis$sis_score,stringsAsFactors = F)
   rbind(sis,sisold)->SIS
-  date.match.sis(x=SIS, id=F, cutoff=90)->SIS
+  date.match.sis(x=SIS, id=F, cutoff=190)->SIS
   SIS$score[match(MCQwdemo$masterdemoid, SIS$masterdemoid)]->MCQwdemo$max_sis_total
   SIS$planningsub[match(MCQwdemo$masterdemoid, SIS$masterdemoid)]->MCQwdemo$max_plan_sub
     
