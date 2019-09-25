@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569445516571.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "90517522",
+    "lastKnownWriteTime" : 2134181429672,
+    "last_content_update" : 1569445516571,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "CF17140",
+        "caption" : "WTAR",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=WTAR&cache_key=CF17140",
+        "displayedObservations" : 432,
+        "environment" : "",
+        "expression" : "WTAR",
+        "object" : "WTAR",
+        "preview" : 0,
+        "totalObservations" : 432,
+        "variables" : 3
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 12,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

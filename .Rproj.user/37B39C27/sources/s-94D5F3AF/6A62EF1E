@@ -12,21 +12,21 @@
     "path" : null,
     "project_path" : null,
     "properties" : {
-        "cacheKey" : "6470BD56",
+        "cacheKey" : "39E5FCFD",
         "caption" : "income",
-        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=income&cache_key=6470BD56",
-        "displayedObservations" : 172,
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=income&cache_key=39E5FCFD",
+        "displayedObservations" : "349",
         "environment" : "",
         "expression" : "income",
         "object" : "income",
-        "preview" : 0,
-        "totalObservations" : 172,
-        "variables" : 3
+        "preview" : "0",
+        "totalObservations" : "349",
+        "variables" : "4"
     },
     "read_only" : false,
     "read_only_alternatives" : [
     ],
-    "relative_order" : 10,
+    "relative_order" : 5,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_dataframe"

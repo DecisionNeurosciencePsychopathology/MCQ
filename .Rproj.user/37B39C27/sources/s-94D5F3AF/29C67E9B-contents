@@ -163,20 +163,20 @@
   income[which(income$Event=="baseline_arm_2"),]->income
   income[which(!is.na(income$Income)),]->income
   as.character(income$ID)->income$ID
-  income[which(income$Income>10),"Income"]<-NA
   as.Date(income$date)->income$date
-  date.match(x=income,y=MCQwdemo, id=T, cutoff=365)->income
+  date.match(x=income,y=MCQwdemo, id=T, cutoff=99999)->income
   income[-c(1,3,6:11)]->income
   #Access
   Macarthur<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_SES.csv")
   Macarthur[c(1, 2, 19)]->Macarthur
-  na.rm(Macarthur)->Macarthur
   Macarthur$CDATE->Macarthur$date
-  date.match(x=Macarthur, id=T, cutoff=365)->Macarthur
+  recode(Macarthur$Q6, "0"=1, "1"=2, "2"=3, "3"=4, "4"=5, "5"=6, "6"=7, "7"=8, "8"=9,"9"=998)->Macarthur$Q6
+  na.rm(Macarthur)->Macarthur
+  date.match(x=Macarthur, id=T, cutoff=99999)->Macarthur
   #Combine
   Macarthur<-data.frame(masterdemoid=Macarthur$masterdemoid, date=Macarthur$date, Income=Macarthur$Q6,stringsAsFactors = F)
   rbind(Macarthur,income)->Incomedf
-  date.match(x=Incomedf, id=F, cutoff=365)->Incomedf
+  date.match(x=Incomedf, id=F, cutoff=99999)->Incomedf
   Incomedf$Income[match(MCQwdemo$masterdemoid, Incomedf$masterdemoid)]->MCQwdemo$income
 
   
@@ -272,18 +272,18 @@
   wtar[which(!is.na(wtar$score)),]->wtar
   as.character(wtar$ID)->wtar$ID
   as.Date(wtar$date)->wtar$date
-  date.match(x=wtar,y=MCQwdemo, id=T, cutoff=99999)->wtar
+  date.match(x=wtar,y=MCQwdemo, id=T, cutoff=9999999)->wtar
   wtar[c(2:4)]->wtar
   #Access
   wtarold<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/080519_WTAR_Export.csv")
   wtarold[c(1,2,7)]->wtarold
   wtarold[which(!is.na(wtarold$WTARSS)),]->wtarold
   wtarold$CDATE->wtarold$date
-  date.match(x=wtarold, id=T, cutoff=99999)->wtarold
+  date.match(x=wtarold, id=T, cutoff=9999999)->wtarold
   #Combine
   wtarold<-data.frame(masterdemoid=wtarold$masterdemoid, date=wtarold$date, score=wtarold$WTARSS, stringsAsFactors = F)
   rbind(wtarold,wtar)->WTAR
-  date.match(x=WTAR, id=F, cutoff=547.5)->WTAR
+  date.match(x=WTAR, id=F, cutoff=9999999)->WTAR
   WTAR$score[match(MCQwdemo$masterdemoid, WTAR$masterdemoid)]->MCQwdemo$wtar_score
   
 #EXIT

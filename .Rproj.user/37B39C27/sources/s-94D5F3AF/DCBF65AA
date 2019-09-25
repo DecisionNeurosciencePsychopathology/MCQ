@@ -12,21 +12,21 @@
     "path" : null,
     "project_path" : null,
     "properties" : {
-        "cacheKey" : "B360C1FE",
+        "cacheKey" : "36703331",
         "caption" : "xb",
-        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=xb&cache_key=B360C1FE",
-        "displayedObservations" : "131",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=xb&cache_key=36703331",
+        "displayedObservations" : "306",
         "environment" : "",
         "expression" : "xb",
         "object" : "xb",
         "preview" : "0",
-        "totalObservations" : "131",
-        "variables" : "8"
+        "totalObservations" : "306",
+        "variables" : "11"
     },
     "read_only" : false,
     "read_only_alternatives" : [
     ],
-    "relative_order" : 8,
+    "relative_order" : 2,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_dataframe"

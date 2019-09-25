@@ -49,13 +49,15 @@
        if(id){x<-bsrc.findid(x,idmap = idmap,id.var = "ID")
        x[which(x$ifexist),]->x}
        y$mldate[match(x$masterdemoid, y$masterdemoid)]->x$mldate
+       y$consentdate[match(x$masterdemoid, y$masterdemoid)]->x$consentdate
        x[which(!is.na(x$mldate)),]->x
        mutate(x, datedif=mldate-date)->x
        x$datedif<-as.numeric(x$datedif)
        xb<-do.call(rbind,lapply(split(x,x$masterdemoid),function(xa){
          xa[which.min(as.numeric(xa$datedif)),]
        }))
-       xb[which(abs(as.numeric(xb$datedif))<cutoff),]->xc
+       xb %>% mutate(bl=ifelse(xb$mldate<xb$consentdate, 1, 0))->xb
+       xb[which(xb$bl==1 | abs(as.numeric(xb$datedif))<cutoff),]->xc
        return(xc)
        }
 #Grab demo info from redcap
@@ -161,20 +163,20 @@
   income[which(income$Event=="baseline_arm_2"),]->income
   income[which(!is.na(income$Income)),]->income
   as.character(income$ID)->income$ID
-  income[which(income$Income>10),"Income"]<-NA
   as.Date(income$date)->income$date
-  date.match(x=income,y=MCQwdemo, id=T, cutoff=365)->income
+  date.match(x=income,y=MCQwdemo, id=T, cutoff=99999)->income
   income[-c(1,3,6:11)]->income
   #Access
   Macarthur<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_SES.csv")
   Macarthur[c(1, 2, 19)]->Macarthur
-  na.rm(Macarthur)->Macarthur
   Macarthur$CDATE->Macarthur$date
-  date.match(x=Macarthur, id=T, cutoff=365)->Macarthur
+  recode(Macarthur$Q6, "0"=1, "1"=2, "2"=3, "3"=4, "4"=5, "5"=6, "6"=7, "7"=8, "8"=9,"9"=998)->Macarthur$Q6
+  na.rm(Macarthur)->Macarthur
+  date.match(x=Macarthur, id=T, cutoff=99999)->Macarthur
   #Combine
   Macarthur<-data.frame(masterdemoid=Macarthur$masterdemoid, date=Macarthur$date, Income=Macarthur$Q6,stringsAsFactors = F)
   rbind(Macarthur,income)->Incomedf
-  date.match(x=Incomedf, id=F, cutoff=365)->Incomedf
+  date.match(x=Incomedf, id=F, cutoff=99999)->Incomedf
   Incomedf$Income[match(MCQwdemo$masterdemoid, Incomedf$masterdemoid)]->MCQwdemo$income
 
   
@@ -270,18 +272,18 @@
   wtar[which(!is.na(wtar$score)),]->wtar
   as.character(wtar$ID)->wtar$ID
   as.Date(wtar$date)->wtar$date
-  date.match(x=wtar,y=MCQwdemo, id=T, cutoff=99999)->wtar
+  date.match(x=wtar,y=MCQwdemo, id=T, cutoff=9999999)->wtar
   wtar[c(2:4)]->wtar
   #Access
   wtarold<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/080519_WTAR_Export.csv")
   wtarold[c(1,2,7)]->wtarold
   wtarold[which(!is.na(wtarold$WTARSS)),]->wtarold
   wtarold$CDATE->wtarold$date
-  date.match(x=wtarold, id=T, cutoff=99999)->wtarold
+  date.match(x=wtarold, id=T, cutoff=9999999)->wtarold
   #Combine
   wtarold<-data.frame(masterdemoid=wtarold$masterdemoid, date=wtarold$date, score=wtarold$WTARSS, stringsAsFactors = F)
   rbind(wtarold,wtar)->WTAR
-  date.match(x=WTAR, id=F, cutoff=547.5)->WTAR
+  date.match(x=WTAR, id=F, cutoff=9999999)->WTAR
   WTAR$score[match(MCQwdemo$masterdemoid, WTAR$masterdemoid)]->MCQwdemo$wtar_score
   
 #EXIT
@@ -499,7 +501,7 @@
   sis[which(!is.na(sis$sis_score)),]->sis
   as.character(sis$ID)->sis$ID
   as.Date(sis$date)->sis$date
-  date.match.sis(x=sis,y=MCQwdemo, id=T, cutoff=90)->sis
+  date.match.sis(x=sis,y=MCQwdemo, id=T, cutoff=190)->sis
   sis[c(2:5)]->sis
   #Access
   sisold<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_SINT.csv")
@@ -512,13 +514,13 @@
   rowSums(sisold[6:13])->sisold$planningsub
   sisold$CDATE->sisold$date
   as.data.frame(sisold)->sisold
-  date.match.sis(x=sisold, y=MCQwdemo, id=T, cutoff=90)->sisold
+  date.match.sis(x=sisold, y=MCQwdemo, id=T, cutoff=190)->sisold
   sisold[c(49:52)]->sisold
   #Combine
   sis<-data.frame(masterdemoid=sis$masterdemoid, date=sis$date, planningsub=sis$sis_plan,
                   score=sis$sis_score,stringsAsFactors = F)
   rbind(sis,sisold)->SIS
-  date.match.sis(x=SIS, id=F, cutoff=90)->SIS
+  date.match.sis(x=SIS, id=F, cutoff=190)->SIS
   SIS$score[match(MCQwdemo$masterdemoid, SIS$masterdemoid)]->MCQwdemo$max_sis_total
   SIS$planningsub[match(MCQwdemo$masterdemoid, SIS$masterdemoid)]->MCQwdemo$max_plan_sub
     
