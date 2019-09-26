@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569274118721.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "E650B76C",
+    "lastKnownWriteTime" : 2443035615496,
+    "last_content_update" : 1569274118721,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "513210C8",
+        "caption" : "sisold",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=sisold&cache_key=513210C8",
+        "displayedObservations" : "108",
+        "environment" : "",
+        "expression" : "sisold",
+        "object" : "sisold",
+        "preview" : "0",
+        "totalObservations" : "108",
+        "variables" : "4"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 10,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
