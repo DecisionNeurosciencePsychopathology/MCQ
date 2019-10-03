@@ -544,6 +544,13 @@
     bsrc.findid(dom2011,idmap = idmap,id.var = "ID")->dom2011
     Finaldf %>% mutate(overlap=ifelse(Finaldf$ID %in% dom2011$masterdemoid,1,0))->Finaldf
 
+    #Which people are in AFSP
+    afspsubs<-read.csv(file="C:/Users/buerkem/OneDrive - UPMC/Desktop/Copy of AFSP PITT Correct Group Assignments.csv")
+    as.numeric(as.character(afspsubs$subject))->afspsubs$subject
+    bsrc.findid(afspsubs,idmap = idmap,id.var = "subject")->afspsubs
+    length(unique(Finaldf[which(Finaldf$ID %in% afspsubs$masterdemoid),"ID"]))
+    
+    
 #Write data to file
 write.csv(Finaldf,"C:/Users/buerkem/Box/skinner/data/delay discounting/MCQwithdemo.csv")
            
