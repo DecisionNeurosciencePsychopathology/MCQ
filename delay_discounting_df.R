@@ -542,13 +542,14 @@
     dom2011<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/Dombrovski 2011 subs.csv")
     as.numeric(gsub(",","",as.character(dom2011$ID)))->dom2011$ID
     bsrc.findid(dom2011,idmap = idmap,id.var = "ID")->dom2011
-    Finaldf %>% mutate(overlap=ifelse(Finaldf$ID %in% dom2011$masterdemoid,1,0))->Finaldf
+    Finaldf %>% mutate(dom2011overlap=ifelse(Finaldf$ID %in% dom2011$masterdemoid,1,0))->Finaldf
 
     #Which people are in AFSP
     afspsubs<-read.csv(file="C:/Users/buerkem/OneDrive - UPMC/Desktop/Copy of AFSP PITT Correct Group Assignments.csv")
     as.numeric(as.character(afspsubs$subject))->afspsubs$subject
     bsrc.findid(afspsubs,idmap = idmap,id.var = "subject")->afspsubs
     length(unique(Finaldf[which(Finaldf$ID %in% afspsubs$masterdemoid),"ID"]))
+    Finaldf %>% mutate(afspoverlap=ifelse(Finaldf$ID %in% afspsubs$masterdemoid, 1,0))->Finaldf
     
     
 #Write data to file
