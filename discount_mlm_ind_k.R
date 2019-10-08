@@ -93,11 +93,11 @@ df_aggr = aggr(sub_df, col=mdc(1:2), numbers=TRUE, sortVars=TRUE, labels=names(s
 
 # summary(lm(log_k_sub ~ groupLeth, orig_subs))
 # talk to Jiazhou about changing permissions for installing compareGroups
-createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, sub_df),)
-createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, orig_subs))
-createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, new_subs))
-createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, non_afsp_subs))
-
+print(c1 <- createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, sub_df)))
+print(c2 <- createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, orig_subs)))
+print(c3 <- createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, new_subs)))
+print(c4 <- c <- createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, non_afsp_subs)))
+export2html(c4, "non_afsp_group_characteristics.html")
 # reproduce the Dombrovski et al. Biol Psych 2011 boxplot
 ggplot(orig_subs, aes(groupLeth, log_k_sub)) + geom_boxplot()
 
