@@ -103,6 +103,10 @@
     MCQold %>% group_by(masterdemoid) %>% mutate(date_dif=CDATE-consentdate)->MCQold
     MCQold %>% group_by(masterdemoid) %>% filter(date_dif==min(date_dif)) %>%ungroup()->MCQold
     unique(MCQold[which(MCQold$date_dif>365),"masterdemoid"])->weirdids
+    #MCQold %>% mutate(newvar=paste0(CDATE,masterdemoid))->MCQolds
+    #MCQolds[which(!duplicated(MCQolds$newvar)),]->MCQolds
+    #as.data.frame(table(MCQolds$masterdemoid)) %>% filter(Freq>1)->MCQoldsnum
+    
   #Redcap MCQ
     MCQnew<-p2$data[c("registration_redcapid","redcap_event_name","bq_date","mcq_1","mcq_2","mcq_3", "mcq_4", "mcq_5", "mcq_6",
           "mcq_7","mcq_8","mcq_9","mcq_10","mcq_11","mcq_12","mcq_13","mcq_14",
