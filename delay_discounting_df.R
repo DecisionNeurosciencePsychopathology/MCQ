@@ -185,7 +185,6 @@
   Incomedf$Income[match(MCQwdemo$masterdemoid, Incomedf$masterdemoid)]->MCQwdemo$income
 
   
-  
 #Baseline SSI
   #Redcap
   ssi<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$bq_date,
@@ -362,11 +361,11 @@
     #merge into demo
     HAM$ham17score[match(MCQwdemo$masterdemoid, HAM$masterdemoid)]->MCQwdemo$ham17score
     HAM$ham24score[match(MCQwdemo$masterdemoid, HAM$masterdemoid)]->MCQwdemo$ham24score
-  
-#Suicide hx
-  #Redcap
+    
+    
+###Redcap
       bsrc.getSUIHX_index<-function(protocol=protocol.cur,suicide_formname="suicide_history"){
-      metadata<-bsrc.getform(protocol = protocol,formname = suicide_formname,aggressivecog = F,mod = F,grabnewinfo = T,batch_size=1000L)
+      metadata<-bsrc.getform(protocol = protocol,formname = suicide_formname,aggressivecog = F,mod = F,grabnewinfo = F,batch_size=50L)
       sui_names<-names(metadata)
       index_df<-data.frame(names=sui_names,rxsim1=gsub(".*_(at[0-9]*$)",'\\1',gsub("___.*","",sui_names),perl = T),stringsAsFactors = F)
       index_df$SingleEntry<-index_df$names==index_df$rxsim1
@@ -377,129 +376,107 @@
       index_df$root_names<-gsub("_at[0-9]*$","\\1",index_df$root_names)
       return(index_df)
     }
-
-  index_df<-bsrc.getSUIHX_index(protocol = ptcs$protect,suicide_formname = "ongoing_suicide_hx_lethality")
-  sux_df<-bsrc.getform(protocol = ptcs$protect,grabnewinfo = T,formname = "ongoing_suicide_hx_lethality",batch_size=1000L)
-  melt_sux_df<-melt(sux_df,id.vars=c(index_df$names[index_df$SingleEntry]))
-  meltxa<-cbind(melt_sux_df,index_df[match(as.character(melt_sux_df$variable),index_df$names),])
-  meltxa<-meltxa[!meltxa$is_checkbox,]
-  reshape_sux<-reshape2::dcast(meltxa,value.var = "value",formula = registration_redcapid+rxsim1~root_names)
-  reshape_sux->suihx
-  suihx$rxsim1<-NULL
-  suihx$sahx_describe<-NULL
-  suihx %>% filter(!is.na(sahx_lr)| !is.na(sahx_sadate))->suihx
-  ymd(suihx$sahx_sadate)->suihx$sahx_sadate
-  
-  #Date of first attempt and highest lethality
-  suihx %>% group_by(registration_redcapid) %>% mutate(firstattrc=min(na.omit(sahx_sadate)))->suihx
-  suihx %>% group_by(registration_redcapid) %>% mutate(maxlethrc=max(na.omit(sahx_lr)))->suihx
-  suihx[which(suihx$sahx_lr==suihx$sahx_lr),c("registration_redcapid","sahx_sadate")]->mldates
-  mldates[!duplicated(mldates$registration_redcapid),]->mldates
-  as.data.frame(mldates)->mldates
-  mldates$sahx_sadate[match(suihx$registration_redcapid, mldates$registration_redcapid)]->suihx$mldate
-  suihx[c(1,4,5,6)]->suihx
-  
-  #Access suicide hx at followups
-  negout<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_NEGOUT.csv")
-  negout[c(1,9,10,12,13,15, 20:23)]->negout
-    #fix dates
-    mdy(negout$DATE1)->negout$DATE1
-    mdy(negout$DATE2)->negout$DATE2
-    mdy(negout$DATE3)->negout$DATE3
-    mdy(negout$ATTDATE)->negout$ATTDATE
-    mdy(negout$ATTDATE2)->negout$ATTDATE2
-    mdy(negout$ATTDATE3)->negout$ATTDATE3
-    mdy(negout$ATTDATE4)->negout$ATTDATE4
-    #gather dates
-    gather(negout, key="Att", value = "Date",-ID, -SUI1, -SUI2)->negout
-    negout[-4]->negout
-    negout %>% group_by(ID) %>% mutate(firstattfu=min(na.omit(Date)))->negout
-    #gather lethalities  
-    gather(negout, key = "Att", value="Lethality",-ID, -Date,-firstattfu)->negout
-    negout[which(negout$Lethality>9),"Lethality"]<-NA
-    negout %>% group_by(ID) %>% mutate(maxlethfu=max(na.omit(Lethality)))->negout
-    negout[which(negout$maxlethfu<0),"maxlethfu"]<-NA
-    negout[which(negout$maxlethfu==negout$Lethality),c("ID","Date")]->oldmldates
-    oldmldates[!duplicated(oldmldates$ID),]->oldmldates
-    oldmldates$Date[match(negout$ID, oldmldates$ID)]->negout$oldmldate
-    negout[-c(2,4,5)]->negout
-  #Suicide hx at baseline
-  suique<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_SQUEST.csv")
-  suique[c(1,14,16,18,20,22,23,25,26,28,29,31,32,34,35)]->suique
-    #fix dates
-    mdy(suique$MRATTMPT)->suique$MRATTMPT
-    mdy(suique$MLDATE)->suique$MLDATE
-    mdy(suique$DATE1)->suique$DATE1
-    mdy(suique$DATE2)->suique$DATE2
-    mdy(suique$DATE3)->suique$DATE3
-    mdy(suique$DATE4)->suique$DATE4
-    mdy(suique$DATE5)->suique$DATE5
-    #gather dates
-    gather(suique, key="Att", value="Date",-ID, -LETHMR,-LETHML,-LETH1,-LETH2,-LETH3,-LETH4,-LETH5)->suique
-    suique[-9]->suique
-    #gather lethality
-    gather(suique, key="Att", value="Lethality", -ID, -Date)->suique
-    suique[-3]->suique
-    suique[which(suique$Lethality>9),"Lethality"]<-NA
-    #First att and max leth
-    suique %>% group_by(ID) %>% mutate(maxlethbl=max(na.omit(Lethality)))->suique
-    suique[which(suique$maxlethbl<0),"maxlethbl"]<-NA
-    suique %>% group_by(ID)%>% mutate(firstattbl=min(na.omit(Date)))->suique
-    suique[which(suique$maxlethbl==suique$Lethality),c("ID","Date")]->oldmldates2
-    oldmldates2[!duplicated(oldmldates2$ID),]->oldmldates2
-    oldmldates2$Date[match(suique$ID, oldmldates2$ID)]->suique$oldmldate
-    suique[-c(2,3)]->suique
-  #Combine bl and fu in Access
-    rbind(negout,suique)->ACsuihx
-    gather(ACsuihx, key="key", value="lethality",-ID, -firstattfu,-firstattbl,-oldmldate)->ACsuihx
-    gather(ACsuihx,key="key2", value="date",-ID, -key,-lethality, -oldmldate)->ACsuihx
-    ACsuihx %>% group_by(ID) %>% mutate(ACmaxleth=max(na.omit(lethality)))->ACsuihx
-    ACsuihx[which(ACsuihx$ACmaxleth<0),"ACmaxleth"]<-NA
-    ACsuihx %>% group_by(ID) %>% mutate(ACfirstatt=min(na.omit(date)))->ACsuihx
-    ACsuihx[which(ACsuihx$ACmaxleth==ACsuihx$lethality),c("ID","oldmldate")]->oldml
-    oldml[!duplicated(oldml$ID),]->oldml
-    oldml$oldmldate[match(ACsuihx$ID, oldml$ID)]->ACsuihx$oldml
-    ACsuihx[c(1,7:9)]->ACsuihx
-   #Fix IDs on both forms
-    suihx->suihxrc
-    as.data.frame(suihxrc)->suihxrc
-    bsrc.findid(suihxrc,idmap = idmap,id.var = "registration_redcapid")->suihxrc
-    suihxrc[c(2:5)]->suihxrc
-    ACsuihx %>% group_by(ID) %>% filter(row_number()==1)->ACsuihx
-    as.data.frame(ACsuihx)->ACsuihx
-    as.data.frame(bsrc.findid(ACsuihx,idmap = idmap,id.var = "ID"))->ACsuihx
-    ACsuihx[which(ACsuihx$ifexist==T),]->ACsuihx
-    ACsuihx[c(2:5)]->ACsuihx
-    row.names(ACsuihx)<-NULL
-  #Merge and get vars
-    suihxrc %>% group_by(masterdemoid) %>% filter(row_number()==1)->suihxrc
-    data.frame(masterdemoid=suihxrc$masterdemoid,firstatt=suihxrc$firstattrc, maxleth=suihxrc$maxlethrc, 
-               mldate=suihxrc$mldate)->suihxrc
-    data.frame(masterdemoid=ACsuihx$masterdemoid,firstatt=ACsuihx$ACfirstatt, maxleth=ACsuihx$ACmaxleth,
-               mldate=ACsuihx$oldml)->ACsuihx
-    rbind(ACsuihx,suihxrc)->lethandfirstatt
-    as.numeric(lethandfirstatt$maxleth)->lethandfirstatt$maxleth
-    ymd(lethandfirstatt$firstatt)->lethandfirstatt$firstatt
-    lethandfirstatt[which(!is.na(lethandfirstatt$firstatt) | !is.na(lethandfirstatt$maxleth)),]->lethandfirstatt
-    lethandfirstatt %>% group_by(masterdemoid) %>% mutate(fin1statt=min(firstatt))->lethandfirstatt
-    lethandfirstatt %>% group_by(masterdemoid) %>% mutate(finmaxleth=max(maxleth))->lethandfirstatt
-    lethandfirstatt[which(lethandfirstatt$maxleth==lethandfirstatt$maxleth),c("masterdemoid","mldate")]->finml
-    finml[!duplicated(finml$masterdemoid),]->finml
-    finml$mldate[match(lethandfirstatt$masterdemoid, finml$masterdemoid)]->lethandfirstatt$finmldate
-    #combine with demo df
-    MCQwdemo[which(MCQwdemo$group=="ATT"),"masterdemoid"]->ATTs
-    lethandfirstatt[which(lethandfirstatt$masterdemoid %in% ATTs),]->lethandfirstatt
-    lethandfirstatt$finmaxleth[match(MCQwdemo$masterdemoid, lethandfirstatt$masterdemoid)]->MCQwdemo$mlatt
-    lethandfirstatt$fin1statt[match(MCQwdemo$masterdemoid, lethandfirstatt$masterdemoid)]->MCQwdemo$firstatt
-    lethandfirstatt$mldate[match(MCQwdemo$masterdemoid, lethandfirstatt$masterdemoid)]->MCQwdemo$mldate
-    #####################################################
-    #Missing attempt lethality
-    unique(MCQwdemo[which(MCQwdemo$group=="ATT" & (is.na(MCQwdemo$mlatt) | is.na(MCQwdemo$firstatt))),"masterdemoid"])->badids
-    
-    #Find age at first attempt
-    MCQwdemo$age_1statt=ifelse(!is.na(MCQwdemo$firstatt),age_calc(na.omit(MCQwdemo$firstatt), units="years", precise=F), NA)
-    
-    ###################################################
+      index_df<-bsrc.getSUIHX_index(protocol = ptcs$protect,suicide_formname = "ongoing_suicide_hx_lethality")
+      sux_df<-bsrc.getform(protocol = ptcs$protect,grabnewinfo = F,formname = "ongoing_suicide_hx_lethality",batch_size=1000L)
+      melt_sux_df<-reshape2::melt(sux_df,id.vars=c(index_df$names[index_df$SingleEntry]))
+      meltxa<-cbind(melt_sux_df,index_df[match(as.character(melt_sux_df$variable),index_df$names),])
+      meltxa<-meltxa[!meltxa$is_checkbox,]
+      reshape_sux<-reshape2::dcast(meltxa,value.var = "value",formula = registration_redcapid+rxsim1~root_names, fun.aggregate = toString )
+      reshape_sux->suihx
+      suihx$rxsim1<-NULL
+      suihx$sahx_describe<-NULL
+      suihx %>% filter(!is.na(sahx_lr)| !is.na(sahx_sadate))->suihx
+      ymd(suihx$sahx_sadate)->suihx$sahx_sadate
+  #Root
+      root="C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/"
+    ###Access
+      ##Neg out
+        negout<-read.csv(file = paste0(root, "A_NEGOUT.csv"))             
+        negout[c(1,2,9,10,12,13,15, 20:23)]->negout
+        #fix dates
+        mdy(negout$CDATE)->negout$CDATE
+        mdy(negout$DATE1)->negout$DATE1
+        mdy(negout$DATE2)->negout$DATE2
+        mdy(negout$DATE3)->negout$DATE3
+        mdy(negout$ATTDATE)->negout$ATTDATE
+        mdy(negout$ATTDATE2)->negout$ATTDATE2
+        mdy(negout$ATTDATE3)->negout$ATTDATE3
+        mdy(negout$ATTDATE4)->negout$ATTDATE4
+        #Put dates with lethalities
+        negout[c(1,3,4)]->negatt1
+        names(negatt1)[c(2,3)]<-c("DATE","Lethality")
+        negout[c(1,5:6)]->negatt2
+        names(negatt2)[c(2,3)]<-c("DATE","Lethality")
+        negout[c(1, 7:11)]->negout
+        gather(negout,key="ATT",value="DATE", -ID)->negout
+        negout[-2]->negout
+        na.rm(negout)->negout
+        full_join(negout,negatt1)->negouts
+        full_join(negouts,negatt2)->negouts
+        negouts[which(!is.na(negouts$DATE)),]->negouts
+       
+      ##Suique
+        suique<-read.csv(file = paste0(root, "A_SQUEST.csv"))
+        suique[c(1,2,14,16,18,20,22,23,25,26,28,29,31,32,34,35)]->suique
+        #fix dates
+        mdy(suique$MRATTMPT)->suique$MRATTMPT
+        mdy(suique$MLDATE)->suique$MLDATE
+        mdy(suique$DATE1)->suique$DATE1
+        mdy(suique$DATE2)->suique$DATE2
+        mdy(suique$DATE3)->suique$DATE3
+        mdy(suique$DATE4)->suique$DATE4
+        mdy(suique$DATE5)->suique$DATE5
+        #put dates with lethalities
+        suique[c(1,3,4)]->suiatt1
+        names(suiatt1)[c(2,3)]<-c("DATE","Lethality")
+        suique[c(1,5:6)]->suiatt2
+        names(suiatt2)[c(2,3)]<-c("DATE","Lethality")
+        suique[c(1,7,9,11,13,15)]->suique
+        gather(suique,key="ATT",value="DATE", -ID)->suique
+        suique[-2]->suique
+        na.rm(suique)->suique
+        full_join(suique,suiatt1)->suiques
+        full_join(suiques,suiatt2)->suiques
+        suiques[which(!is.na(suiques$DATE)),]->suiques
+      ##Merge Access suique and negout
+        full_join(negouts,suiques)->accATTs
+        
+    #Change IDs and match redcap and access
+        accATTs<-bsrc.findid(accATTs,idmap = idmap,id.var = "ID")
+        accATTs[2:4]->accATTs
+        suihx<-bsrc.findid(suihx,idmap = idmap,id.var = "registration_redcapid")
+        suihx<-data.frame(masterdemoid=suihx$masterdemoid, Lethality=suihx$sahx_lr,
+                          DATE=suihx$sahx_sadate)
+        as.integer(as.character(suihx$Lethality))->suihx$Lethality
+        suihx
+        full_join(suihx,accATTs)->suicideatts
+  #Remove duplicate attempts
+    #make new variable with date and id
+    suicideatts %>% mutate(newvar=paste0(masterdemoid, DATE))->suicideatts
+    #order by lethality then check for duplicated 
+    suicideatts[order(suicideatts$Lethality),]->suicideatts
+    suicideatts[-which(duplicated(suicideatts$newvar) & is.na(suicideatts$Lethality)),]->suicideatts
+    #Two people have duplicate (same date) attempts w/ different lethalities, taking date and highest lethality
+    suicideatts[-which((suicideatts$newvar=="1146762003-03-12" | suicideatts$newvar=="2204072016-05-20") &
+                        (suicideatts$Lethality==1 | suicideatts$Lethality==5)),]->suicideatts
+    #Remove all other duplicates (same date AND lethality)
+    suicideatts[-which(duplicated(suicideatts)),]->suicideatts
+    suicideatts[-4]->atts_leths
+  #Determine date of first attempt and highest lethality
+    atts_leths[which(atts_leths$Lethality=="99"),"Lethality"]<-NA
+    atts_leths %>% group_by(masterdemoid) %>% mutate(highestleth=max(na.omit(Lethality)))->atts_leths
+    #People w/o Lethalities: Look into, remove for now
+    atts_leths[which(atts_leths$highestleth==-Inf),"masterdemoid"]->noleths
+    atts_leths[-which(atts_leths$masterdemoid %in% noleths$masterdemoid),]->atts_leths
+    atts_leths %>% group_by(masterdemoid) %>% mutate(firstatt=min(na.omit(DATE)))->atts_leths
+  #Determine ml att
+    atts_leths[which(atts_leths$highestleth==atts_leths$Lethality),c("masterdemoid", "DATE")]->newdf
+    newdf[-which(duplicated(newdf$masterdemoid)),]->newdf
+    newdf$DATE[match(atts_leths$masterdemoid, newdf$masterdemoid)]->atts_leths$ml_date
+    #Put first att and hl in Demo
+    atts_leths$highestleth[match(MCQwdemo$masterdemoid, atts_leths$masterdemoid)]->MCQwdemo$highestlethatt
+    atts_leths$ml_date[match(MCQwdemo$masterdemoid, atts_leths$masterdemoid)]->MCQwdemo$mldate
+    atts_leths$firstatt[match(MCQwdemo$masterdemoid, atts_leths$masterdemoid)]->MCQwdemo$firstatt
     
 #SIS
   sis<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$bq_date,sis_score=p2$data$sis_max_total_s, sis_plan=p2$data$sis_max_planning_s)
@@ -558,4 +535,4 @@
     
 #Write data to file
 write.csv(Finaldf,"C:/Users/buerkem/Box/skinner/data/delay discounting/MCQwithdemo.csv")
-           
+
