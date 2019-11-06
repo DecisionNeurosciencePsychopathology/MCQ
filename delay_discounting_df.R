@@ -477,6 +477,9 @@
     atts_leths$highestleth[match(MCQwdemo$masterdemoid, atts_leths$masterdemoid)]->MCQwdemo$highestlethatt
     atts_leths$ml_date[match(MCQwdemo$masterdemoid, atts_leths$masterdemoid)]->MCQwdemo$mldate
     atts_leths$firstatt[match(MCQwdemo$masterdemoid, atts_leths$masterdemoid)]->MCQwdemo$firstatt
+  #Age of ml att
+    age_calc(MCQwdemo[which(!is.na(MCQwdemo$mldate)),"DOB"], enddate=MCQwdemo[which(!is.na(MCQwdemo$mldate)),"mldate"],
+             units="years", precise=F)->MCQwdemo[which(!is.na(MCQwdemo$mldate)),"agemlatt"]
     
 #SIS
   sis<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$bq_date,sis_score=p2$data$sis_max_total_s, sis_plan=p2$data$sis_max_planning_s)
@@ -505,6 +508,38 @@
   date.match.sis(x=SIS, id=F, cutoff=190)->SIS
   SIS$score[match(MCQwdemo$masterdemoid, SIS$masterdemoid)]->MCQwdemo$max_sis_total
   SIS$planningsub[match(MCQwdemo$masterdemoid, SIS$masterdemoid)]->MCQwdemo$max_plan_sub
+
+#SCID data
+  #Access
+  SCID<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_SCIDIV.csv")
+  mdy(SCID$CDATE)->SCID$date
+  date.match.ssi(SCID, id=T, cutoff=365)->SCID
+    #NAs mean 0 (for subs), change them
+    for (i in 1:nrow(SCID)){
+    SCID[i, c(108:126)]<- sapply(SCID[i, c(108:126)], function(x){ifelse(is.na(x) ,x<-0,x<-x)})}
+    #calculate lifetime and pm subs use d/os
+    sapply(1:nrow(SCID), function(x)sum(SCID[x,c(108,110,112, 114, 116, 118, 120, 122, 125)]>1))->SCID$LPsubs
+    sapply(1:nrow(SCID), function(x)sum(SCID[x,c(109,111,113, 115, 117, 119, 121, 123, 126)]>1))->SCID$PMsubs
+  #Redcap
+    bsrc.getform(protocol=ptcs$protect, formname = "scid", online=F)->scid
+    scid[c(1, 6, 114,116, 120, 122, 126, 128, 131, 133, 137, 139, 143, 145, 149, 151, 154, 156, 168, 170)]->scid
+    #Same w/ NAs
+    for (i in 1:nrow(scid)){scid[i,]<- sapply(scid[i,], function(x){ifelse(is.na(x) ,x<-0,x<-x)})}
+    #calculate lifetime and pm subs
+    sapply(1:nrow(scid), function(x)sum(scid[x,c(3,5,7,9,11,13,15,17,19)]>1))->scid$LPsubs
+    sapply(1:nrow(scid), function(x)sum(scid[x,c(4,6,8,10,12,14,16,18,20)]>1))->scid$PMsubs
+    #ID fix
+    scid<-bsrc.findid(scid,idmap = idmap,id.var = "registration_redcapid")
+    #Remove duplicates (take Access over redcap)
+    scid[-which(scid$masterdemoid %in% SCID$masterdemoid),]->scid
+  #Combine
+    scid2<-data.frame(ID=scid$masterdemoid, LPsubs=scid$LPsubs, PMsubs=scid$PMsubs)
+    SCID2<-data.frame(ID=SCID$masterdemoid, LPsubs=SCID$LPsubs, PMsubs=SCID$PMsubs)
+    rbind(scid2,SCID2)->SCIDfin
+  #Put in df
+    SCIDfin$LPsubs[match(MCQwdemo$masterdemoid, SCIDfin$ID)]->MCQwdemo$lpsubs
+    SCIDfin$PMsubs[match(MCQwdemo$masterdemoid, SCIDfin$ID)]->MCQwdemo$pmsubs
+
     
 #Make final df
     Finaldf<-data.frame(ID=MCQwdemo$masterdemoid, Item=MCQwdemo$Item, Response=MCQwdemo$Response, 
