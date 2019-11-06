@@ -8,11 +8,11 @@
     #startup
     startup()
     #ID map and master demo map
-     md<-bsrc.checkdatabase2(ptcs$masterdemo,forceskip = T,online = T,batch_size=1000L)
+     md<-bsrc.checkdatabase2(ptcs$masterdemo,forceskip = T,online = F,batch_size=1000L)
      idmap<-md$data[c("registration_redcapid","registration_wpicid","registration_soloffid")]
      names(idmap)<-c("masterdemoid","wpicid","soloffid")
     #p2 map
-     p2<-bsrc.checkdatabase2(protocol=ptcs$protect, online=T, batch_size=1000L)
+     p2<-bsrc.checkdatabase2(protocol=ptcs$protect, online=F, batch_size=1000L)
      #Fix id (if old id), then match dates of redcap/access to closest date to MCQ
      date.match<-function(x,y=MCQwdemo, id, cutoff){
        if(!is.Date(x$date)){as.Date(mdy(x$date))->x$date}
@@ -480,6 +480,9 @@
   #Age of ml att
     age_calc(MCQwdemo[which(!is.na(MCQwdemo$mldate)),"DOB"], enddate=MCQwdemo[which(!is.na(MCQwdemo$mldate)),"mldate"],
              units="years", precise=F)->MCQwdemo[which(!is.na(MCQwdemo$mldate)),"agemlatt"]
+  #Age of 1st att
+    age_calc(MCQwdemo[which(!is.na(MCQwdemo$firstatt)),"DOB"], enddate=MCQwdemo[which(!is.na(MCQwdemo$firstatt)),"firstatt"],
+             units="years", precise=F)->MCQwdemo[which(!is.na(MCQwdemo$firstat)),"agefirstatt"]
     
 #SIS
   sis<-data.frame(ID=p2$data$registration_redcapid,date=p2$data$bq_date,sis_score=p2$data$sis_max_total_s, sis_plan=p2$data$sis_max_planning_s)
@@ -539,8 +542,51 @@
   #Put in df
     SCIDfin$LPsubs[match(MCQwdemo$masterdemoid, SCIDfin$ID)]->MCQwdemo$lpsubs
     SCIDfin$PMsubs[match(MCQwdemo$masterdemoid, SCIDfin$ID)]->MCQwdemo$pmsubs
-
     
+#ATHF (BL)
+  #Access
+    ATHF<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_ATHF.csv")
+    mdy(ATHF$CDATE)->ATHF$date
+    date.match.ssi(ATHF, id=T, cutoff=90)->ATHF
+  #Redcap
+    athf<-data.frame(ID=p2$data$registration_redcapid, event=p2$data$redcap_event_name, date=p2$data$bq_date,
+                     score=p2$data$athf_maxnum)
+    bsrc.findid(athf,idmap = idmap,id.var = "ID")->athf
+    athf[which(grepl("baseline", athf$event)),]->athf
+  #Combine
+    athf2<-data.frame(masterdemoid=athf$masterdemoid, date=as.Date(athf$date), score=athf$score)
+    ATHF2<-data.frame(masterdemoid=ATHF$masterdemoid, date=ATHF$date, score=ATHF$STRENGTH)
+    rbind(athf2, ATHF2)->ATHFnew
+    date.match.ssi(x=ATHFnew, id=F, cutoff=90)->ATHFnew
+    ATHFnew$score[match(MCQwdemo$masterdemoid, ATHFnew$masterdemoid)]->MCQwdemo$ATHF_score
+    
+#CIRSG(total)
+   #Access
+    CIRS<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/A_CIRSG.csv")
+    mdy(CIRS$CDATE)->CIRS$date
+    date.match.ssi(CIRS, id=T, cutoff=90)->CIRS
+    #score
+    rowSums(CIRS[5:17])->CIRS$score
+  #Redcap
+    cirs<-data.frame(ID=p2$data$registration_redcapid, event=p2$data$redcap_event_name, date=p2$data$bq_date,
+                     cirs1=p2$data$cirsg_1_s, cirs2=p2$data$cirsg_2_s, cirs3=p2$data$cirsg_3_s, 
+                     cirs4=p2$data$cirsg_4_s, cirs5=p2$data$cirsg_5_s, cirs6=p2$data$cirsg_6_s,
+                     cirs7=p2$data$cirsg_7_s, cirs8=p2$data$cirsg_8_s, cirs9=p2$data$cirsg_9_s,
+                     cirs10=p2$data$cirsg_10_s, cirs11=p2$data$cirsg_11_s, cirs12=p2$data$cirsg_12_s,
+                     cirs13=p2$data$cirsg_13_s)
+    bsrc.findid(cirs,idmap = idmap,id.var = "ID")->cirs
+    cirs[which(grepl("baseline", cirs$event)),]->cirs
+    #score
+    rowSums(cirs[4:16])->cirs$score
+    cirs[-which(is.na(cirs$score)),]->cirs
+  #Combine
+    CIRS2<-data.frame(masterdemoid=CIRS$masterdemoid, date=CIRS$date, score=CIRS$score)
+    cirs2<-data.frame(masterdemoid=cirs$masterdemoid, date=cirs$date, score=cirs$score)
+    rbind(CIRS2, cirs2)->cirsnew
+    date.match.ssi(cirsnew, id=F, cutoff=90)->cirsnew
+    cirsnew$score[match(MCQwdemo$masterdemoid, cirsnew$masterdemoid)]->MCQwdemo$CIRS_score
+      
+
 #Make final df
     Finaldf<-data.frame(ID=MCQwdemo$masterdemoid, Item=MCQwdemo$Item, Response=MCQwdemo$Response, 
                         Immediate.magnitude=MCQwdemo$Immediate.magnitude, Delayed.magnitude=MCQwdemo$Delayed.magnitude,
@@ -549,7 +595,10 @@
                         Income=MCQwdemo$income, ham17.score=MCQwdemo$ham17score, ham24.score=MCQwdemo$ham24score,
                         SSI.score=MCQwdemo$bl.SSIscore, SIS.score=MCQwdemo$max_sis_total, SIS.plansub=MCQwdemo$max_plan_sub,
                         mmse.score=MCQwdemo$mmse_score, drs.score=MCQwdemo$drs_score, wtar.score=MCQwdemo$wtar_score,
-                        exit.score=MCQwdemo$exit_score, highest_lethality=MCQwdemo$mlatt, age.firstatt=MCQwdemo$age_1statt)
+                        exit.score=MCQwdemo$exit_score, lifetime.subs=MCQwdemo$lpsubs, current.subs=MCQwdemo$pmsubs, 
+                        athf.score=MCQwdemo$ATHF_score, cirs.score=MCQwdemo$CIRS_score,
+                        highest_lethality=MCQwdemo$highestlethatt, age.firstatt=MCQwdemo$agefirstatt, 
+                        age.mlatt=MCQwdemo$agemlatt)
   
   #CURRENTLY remove bad ids
     #badids
