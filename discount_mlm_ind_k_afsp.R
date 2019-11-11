@@ -1,5 +1,4 @@
 ####### Read in tall-format delay discounting data, build multi-level models
-# runs on Pittsburgh data
 library(dplyr)
 library(tidyverse)
 library(psych)
@@ -10,58 +9,39 @@ library(car)
 library(readxl)
 library(compareGroups)
 setwd("~/OneDrive/papers/discounting/data")
-load('discounting_processed_pit.Rdata')
+load('discounting_processed_afsp.Rdata')
 # sanity check on consistency
-ggplot(df %>% filter(!is.na(groupLeth)), aes(log(k), consistency, color = groupLeth)) + geom_smooth(method = "gam", formula = y ~ splines::ns(x,4))
+# ggplot(df %>% filter(!is.na(groupLeth)), aes(log(k), consistency, color = groupLeth)) + geom_smooth(method = "gam", formula = y ~ splines::ns(x,4))
 
 # check missingness
-library(VIM)
-df_aggr = aggr(df, col=mdc(1:2), numbers=TRUE, sortVars=TRUE, labels=names(df), cex.axis=.7, gap=3, ylab=c("Proportion of missingness","Missingness Pattern"))
+library(mice)
+df_aggr = aggr(adf, col=mdc(1:2), numbers=TRUE, sortVars=TRUE, labels=names(df), cex.axis=.7, gap=3, ylab=c("Proportion of missingness","Missingness Pattern"))
 
-
-
-sub_df <- df %>% select(ID, Group, groupLeth, k_sub, log_k_sub, max_consistency, Age, Gender, Race, Ethnicity, Education, Marital.status, 
-                        Income, ham17.score, SSI.score, SIS.score, drs.score, wtar.score, exit.score, mmse.score, highest_lethality, dom2011overlap, afspoverlap) %>% unique()
-orig_subs <- sub_df %>% filter(dom2011overlap==1) # subjects in Dombrovski et al. 2011
-new_subs <- sub_df %>% filter(dom2011overlap==0) # Pittsburgh older (50+) subjects not in Dombrovski 2011
-non_afsp_subs <- sub_df %>% filter(afspoverlap==0)
-df_aggr = aggr(sub_df, col=mdc(1:2), numbers=TRUE, sortVars=TRUE, labels=names(sub_df), cex.axis=.7, gap=3, ylab=c("Proportion of missingness","Missingness Pattern"))
+# df_aggr = aggr(sub_df, col=mdc(1:2), numbers=TRUE, sortVars=TRUE, labels=names(sub_df), cex.axis=.7, gap=3, ylab=c("Proportion of missingness","Missingness Pattern"))
 
 # summary(lm(log_k_sub ~ groupLeth, orig_subs))
 # talk to Jiazhou about changing permissions for installing compareGroups
-print(c1 <- createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, sub_df)))
-print(c2 <- createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, orig_subs)))
-print(c3 <- createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, new_subs)))
-print(c4 <- c <- createTable(compareGroups(groupLeth ~ log_k_sub + max_consistency + Age + Gender + Race + Education + Income + SIS.score + SSI.score, non_afsp_subs)))
-export2html(c4, "non_afsp_group_characteristics.html")
-# reproduce the Dombrovski et al. Biol Psych 2011 boxplot
-ggplot(orig_subs, aes(groupLeth, log_k_sub)) + geom_boxplot()
+print(c1 <- createTable(compareGroups(lethgrp ~ site_code + Age + sex + RACEN + ETHNIC + educa_true + MacarthurQ6 + MAXLETH_P + IDEATION, sub_df)))
+export2html(c1, "afsp_group_characteristics.html")
 
-cormat <- corr.test(df %>% select(delayMag_sc, immMag_sc, delay_sc, magRatio_sc, k, logk))
-corrplot(cormat$r, cl.lim=c(-1,1),
-         method = "circle", tl.cex = 1.5, type = "upper", tl.col = 'black',
-         order = "hclust", diag = FALSE,
-         addCoef.col="black", addCoefasPercent = FALSE,
-         p.mat = cormat$p, sig.level=0.05, insig = "blank")
+print(c2 <- createTable(compareGroups(site_code ~ Age + sex + RACEN + ETHNIC + educa_true + MacarthurQ6 + MAXLETH_P + IDEATION, sub_df)))
 
-ggplot(df, aes(log(k), choice, color = delayMag>50)) + geom_smooth(method = "glm", method.args = list(family = "binomial"))
-ggplot(df, aes(delay, choice, color = immMag>50)) + geom_smooth(method = "glm", method.args = list(family = "binomial"))
-ggplot(df, aes(log(magRatio), choice)) + geom_smooth(method = "glm", method.args = list(family = "binomial"))
-ggplot(df, aes(log(k), choice)) + geom_smooth(method = "glm", method.args = list(family = "binomial"))
 
 setwd('~/OneDrive/papers/discounting/plots/')
-pdf("discounting_choice_by_k_group.pdf", height = 6, width = 8)
-ggplot(df %>% filter(!is.na(groupLeth)), aes(log(k), choice, color = groupLeth)) + geom_smooth(method = "glm", method.args = list(family = "binomial"))
+pdf("discounting_choice_by_k_group_afsp_by_site.pdf", height = 6, width = 12)
+# remove group 'NA' for now
+ggplot(adf %>% filter(!is.na(lethgrp)), aes(log(k), choice, color = as.character(lethgrp))) + geom_smooth(method = "glm", method.args = list(family = "binomial")) + facet_wrap(~site_code)
 dev.off()
 ggplot(df, aes(log(k), choice, color = groupLeth)) + geom_smooth(method = "glm", method.args = list(family = "binomial")) + facet_wrap(~immMag >50)
 
-m4a <- glmer(choice ~ logk_sc * groupLeth + (1|ID), family = binomial, df)
-while (any(grepl("failed to converge", m4a@optinfo$conv$lme4$messages) )) {
-  ss <- getME(m4a,c("theta","fixef"))
-  m4a <- update(m4a, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
-summary(m4a)
-Anova(m4a, '3')
-vif(m4a)
+m1 <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + (1|subject), family = binomial, adf)
+summary(m1)
+while (any(grepl("failed to converge", m1@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m1,c("theta","fixef"))
+  m1 <- update(m1, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
+summary(m1)
+Anova(m1, '3')
+vif(m1)
 
 # without AFSP subjects
 m4a1 <- glmer(choice ~ logk_sc * groupLeth + (1|ID), family = binomial, df %>% filter(afspoverlap==0))
