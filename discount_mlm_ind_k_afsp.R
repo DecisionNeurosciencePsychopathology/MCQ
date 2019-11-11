@@ -34,6 +34,8 @@ ggplot(adf %>% filter(!is.na(lethgrp)), aes(log(k), choice, color = as.character
 dev.off()
 ggplot(df, aes(log(k), choice, color = groupLeth)) + geom_smooth(method = "glm", method.args = list(family = "binomial")) + facet_wrap(~immMag >50)
 
+# initial model looking at the three sites
+# 1 = NYC, 2 = PGH, 3 = Columbus
 m1 <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + (1|subject), family = binomial, adf)
 summary(m1)
 while (any(grepl("failed to converge", m1@optinfo$conv$lme4$messages) )) {
@@ -43,22 +45,26 @@ summary(m1)
 Anova(m1, '3')
 vif(m1)
 
-# without AFSP subjects
-m4a1 <- glmer(choice ~ logk_sc * groupLeth + (1|ID), family = binomial, df %>% filter(afspoverlap==0))
-while (any(grepl("failed to converge", m4a@optinfo$conv$lme4$messages) )) {
-  ss <- getME(m4a1,c("theta","fixef"))
-  m4a1 <- update(m4a1, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
-summary(m4a1)
-Anova(m4a1, '3')
+# without Pittsburgh
+m2 <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + (1|subject), family = binomial, adf %>% filter(site_code!=2))
+while (any(grepl("failed to converge", m2@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m2,c("theta","fixef"))
+  m2 <- update(m2, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
+summary(m2)
+Anova(m2, '3')
 
-# without AFSP subjects
-m4b1 <- glmer(choice ~ logk_sc * groupLeth + logk_sc *Gender + logk_sc *education_sc + (1|ID), family = binomial, df %>% filter(afspoverlap==0))
-while (any(grepl("failed to converge", m4b1@optinfo$conv$lme4$messages) )) {
-  ss <- getME(m4b1,c("theta","fixef"))
-  m4b <- update(m4b1, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
-summary(m4b1)
-Anova(m4b1, '3')
+# and with demo covariates
+m2a <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + 
+               logk_sc * RACEN + logk_sc * sex + logk_sc * educa_true + logk_sc * as.numeric(adf$MacarthurQ6) + 
+               (1|subject), family = binomial, adf %>% filter(site_code!=2))
+while (any(grepl("failed to converge", m2a@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m2a,c("theta","fixef"))
+  m2a <- update(m2a, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
+summary(m2a)
+Anova(m2, '3')
 
+
+## models below run in the Pittsburgh sample previously and not adapted to the AFSP data
 
 m4d <- glmer(choice ~ logk_sc * groupLeth + logk_sc *Gender + logk_sc *income_sc + logk_sc *education_sc + (1|ID), family = binomial, df)
 while (any(grepl("failed to converge", m4d@optinfo$conv$lme4$messages) )) {
@@ -67,15 +73,6 @@ while (any(grepl("failed to converge", m4d@optinfo$conv$lme4$messages) )) {
 summary(m4d)
 Anova(m4d, '3')
 vif(m4d)
-
-# replication sample only
-m4dr <- glmer(choice ~ logk_sc * groupLeth + logk_sc *Gender + logk_sc *income_sc + logk_sc *education_sc + (1|ID), family = binomial, df %>% filter(overlap==0))
-while (any(grepl("failed to converge", m4d@optinfo$conv$lme4$messages) )) {
-  ss <- getME(m4dr,c("theta","fixef"))
-  m4dr <- update(m4dr, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
-summary(m4dr)
-Anova(m4dr, '3')
-vif(m4dr)
 
 
 # run models on other attributes
@@ -156,14 +153,6 @@ summary(m5d)
 Anova(m5d, '3')
 vif(m5d)
 
-# item number -- these models don't converge
-# m6a <- glmer(choice ~ logk_sc * groupLeth + scale(item) + (1|ID), family = binomial, df)
-# while (any(grepl("failed to converge", m6a@optinfo$conv$lme4$messages) )) {
-#   ss <- getME(m6a,c("theta","fixef"))
-#   m6a <- update(m6a, start=ss, control=glmerControl(optCtr=list(maxfun=1e5)))}
-# summary(m6a)
-# Anova(m6a, '3')
-# vif(m6a)
 setwd('~/OneDrive/papers/discounting/data/')
-save(file = "discounting_results.Rdata",list = ls(all.names = TRUE))
+save(file = "discounting_results_afsp.Rdata",list = ls(all.names = TRUE))
 # load("discounting_results.Rdata")
