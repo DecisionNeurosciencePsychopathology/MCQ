@@ -54,6 +54,7 @@ vif(m1)
 # without Pittsburgh
 m2 <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + (1|subject), family = binomial, adf %>% filter(site_code!=2))
 while (any(grepl("failed to converge", m2@optinfo$conv$lme4$messages) )) {
+  print(m2@optinfo$conv$lme4$conv)
   ss <- getME(m2,c("theta","fixef"))
   m2 <- update(m2, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
 summary(m2)
@@ -61,9 +62,10 @@ Anova(m2, '3')
 
 # and with demo covariates
 m2a <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + 
-               logk_sc * RACEN + logk_sc * educa_true + logk_sc * as.numeric(MacarthurQ6) + 
+               logk_sc * RACEN + logk_sc * scale(educa_true) + logk_sc * scale(as.numeric(MacarthurQ6)) + 
                (1|subject), family = binomial, adf %>% filter(site_code!=2))
 while (any(grepl("failed to converge", m2a@optinfo$conv$lme4$messages) )) {
+  print(m2a@optinfo$conv$lme4$messages)
   ss <- getME(m2a,c("theta","fixef"))
   m2a <- update(m2a, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
 summary(m2a)
