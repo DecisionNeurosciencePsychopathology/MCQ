@@ -61,15 +61,43 @@ summary(m2)
 Anova(m2, '3')
 
 # and with demo covariates
-m2a <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + 
-               logk_sc * RACEN + logk_sc * scale(educa_true) + logk_sc * scale(as.numeric(MacarthurQ6)) + 
-               (1|subject), family = binomial, adf %>% filter(site_code!=2))
+m2a <- glmer(choice ~ logk_sc * lethgrp +logk_sc * site_code +  logk_sc * scale(educa_true) + (1|subject), family = binomial, adf %>% filter(site_code!=2))
 while (any(grepl("failed to converge", m2a@optinfo$conv$lme4$messages) )) {
   print(m2a@optinfo$conv$lme4$messages)
   ss <- getME(m2a,c("theta","fixef"))
-  m2a <- update(m2a, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
+  m2a <- update(m2a, start=ss,  control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = "nloptwrap",optCtr=list(maxfun=2e6)))}
 summary(m2a)
 Anova(m2a, '3')
+
+m2b <- glmer(choice ~ logk_sc * lethgrp +logk_sc * site_code +  logk_sc * scale(educa_true) + logk_sc * scale(MacarthurQ6) + (1|subject), family = binomial, adf %>% filter(site_code!=2))
+while (any(grepl("failed to converge", m2b@optinfo$conv$lme4$messages) )) {
+  print(m2b@optinfo$conv$lme4$messages)
+  ss <- getME(m2b,c("theta","fixef"))
+  # magic ingredient: nAGQ0initStep=FALSE to get good initial estimates!
+  m2b <- update(m2b, start=ss,  control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = "nloptwrap",optCtr=list(maxfun=2e6)))} 
+summary(m2b)
+Anova(m2b, '3')
+# income is NS, drop
+
+# race
+m2c <- glmer(choice ~ logk_sc * lethgrp +logk_sc * site_code +  logk_sc * scale(educa_true) + logk_sc * RACEN + (1|subject), family = binomial, adf %>% filter(site_code!=2))
+while (any(grepl("failed to converge", m2c@optinfo$conv$lme4$messages) )) {
+  print(m2c@optinfo$conv$lme4$messages)
+  ss <- getME(m2c,c("theta","fixef"))
+  # magic ingredient: nAGQ0initStep=FALSE to get good initial estimates!
+  m2c <- update(m2c, start=ss,  control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = "nloptwrap",optCtr=list(maxfun=2e6)))} 
+summary(m2c)
+Anova(m2c, '3')
+
+# age
+m2c <- glmer(choice ~ logk_sc * lethgrp +logk_sc * site_code +  logk_sc * scale(educa_true) + logk_sc * RACEN + logk_sc * scale(Age) + (1|subject), family = binomial, adf %>% filter(site_code!=2))
+while (any(grepl("failed to converge", m2c@optinfo$conv$lme4$messages) )) {
+  print(m2c@optinfo$conv$lme4$messages)
+  ss <- getME(m2c,c("theta","fixef"))
+  # magic ingredient: nAGQ0initStep=FALSE to get good initial estimates!
+  m2c <- update(m2c, start=ss,  control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = "nloptwrap",optCtr=list(maxfun=2e6)))} 
+summary(m2c)
+Anova(m2c, '3')
 
 
 ## models below run in the Pittsburgh sample previously and not adapted to the AFSP data
