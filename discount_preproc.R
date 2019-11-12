@@ -97,7 +97,11 @@ sub_df <- read_spss('AFSP ALL SITES ALL MEASURES MERGED Vb1.4.sav')  %>% filter(
                lethgrp==3  ~ 'HL',
                lethgrp==2 ~ 'LL',
                lethgrp==1 ~ 'DEP',
-               lethgrp==0 ~ 'HC'))
+               lethgrp==0 ~ 'HC'), 
+             site = case_when(
+               site_code==1 ~ 'NY',
+               site_code==2 ~ 'PGH',
+               site_code==3 ~ 'COL'))
 adf <- merge(adf, sub_df[,c(1:121,485,497:505)], by = 'subject')
 
 adf <- adf %>% mutate(delayMag_sc = scale(delayMag),

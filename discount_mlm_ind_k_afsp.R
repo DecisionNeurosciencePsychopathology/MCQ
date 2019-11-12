@@ -21,7 +21,7 @@ df_aggr = aggr(adf, col=mdc(1:2), numbers=TRUE, sortVars=TRUE, labels=names(df),
 
 # summary(lm(log_k_sub ~ groupLeth, orig_subs))
 # talk to Jiazhou about changing permissions for installing compareGroups
-print(c1 <- createTable(compareGroups(lethgrp ~ site_code + Age + sex + RACEN + ETHNIC + educa_true + MacarthurQ6 + MAXLETH_P + IDEATION, sub_df)))
+print(c1 <- createTable(compareGroups(lethgrp ~ site_code + Age + sex + RACEN + ETHNIC + educa_true + MacarthurQ6 + MAXLETH_P + IDEATION, sub_df %>% filter(site_code!=2))))
 export2html(c1, "afsp_group_characteristics.html")
 
 print(c2 <- createTable(compareGroups(site_code ~ Age + sex + RACEN + ETHNIC + educa_true + MacarthurQ6 + MAXLETH_P + IDEATION, sub_df)))
@@ -34,9 +34,15 @@ ggplot(adf %>% filter(!is.na(lethgrp)), aes(log(k), choice, color = as.character
 dev.off()
 ggplot(df, aes(log(k), choice, color = groupLeth)) + geom_smooth(method = "glm", method.args = list(family = "binomial")) + facet_wrap(~immMag >50)
 
+pdf("discounting_choice_by_afsp_by_site.pdf", height = 6, width = 8)
+# remove group 'NA' for now
+ggplot(adf %>% filter(!is.na(lethgrp)), aes(log(k), choice, color = as.character(site_code))) + geom_smooth(method = "glm", method.args = list(family = "binomial")) 
+dev.off()
+
+
 # initial model looking at the three sites
 # 1 = NYC, 2 = PGH, 3 = Columbus
-m1 <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + (1|subject), family = binomial, adf)
+m1 <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + (1|site_code/subject), family = binomial, adf)
 summary(m1)
 while (any(grepl("failed to converge", m1@optinfo$conv$lme4$messages) )) {
   ss <- getME(m1,c("theta","fixef"))
@@ -55,13 +61,13 @@ Anova(m2, '3')
 
 # and with demo covariates
 m2a <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + 
-               logk_sc * RACEN + logk_sc * sex + logk_sc * educa_true + logk_sc * as.numeric(adf$MacarthurQ6) + 
+               logk_sc * RACEN + logk_sc * educa_true + logk_sc * as.numeric(MacarthurQ6) + 
                (1|subject), family = binomial, adf %>% filter(site_code!=2))
 while (any(grepl("failed to converge", m2a@optinfo$conv$lme4$messages) )) {
   ss <- getME(m2a,c("theta","fixef"))
   m2a <- update(m2a, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
 summary(m2a)
-Anova(m2, '3')
+Anova(m2a, '3')
 
 
 ## models below run in the Pittsburgh sample previously and not adapted to the AFSP data
