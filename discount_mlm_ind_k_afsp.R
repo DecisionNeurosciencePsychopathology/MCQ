@@ -8,6 +8,7 @@ library(ggpubr)
 library(car)
 library(readxl)
 library(compareGroups)
+library(optimx)
 setwd("~/OneDrive/papers/discounting/data")
 load('discounting_processed_afsp.Rdata')
 # sanity check on consistency
@@ -144,7 +145,9 @@ while (any(grepl("failed to converge", m3a@optinfo$conv$lme4$messages) )) {
   print(m3a@optinfo$conv$lme4$messages)
   ss <- getME(m3a,c("theta","fixef"))
   # magic ingredient: nAGQ0initStep=FALSE to get good initial estimates!
-  m3a <- update(m3a, start=ss,  control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = c("nloptwrap", "bobyqa"),optCtr=list(maxfun=2e6)))} 
+  m3a <- update(m3a, start=ss,  control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e6)))} 
+ss <- getME(m3a,c("theta","fixef"))
+m3a <- update(m3a, start=ss,  control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = c("nloptwrap", "bobyqa"),optCtr=list(maxfun=2e6))) 
 summary(m3a)
 Anova(m3a, '3')
 
