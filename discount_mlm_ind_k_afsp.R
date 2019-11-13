@@ -3,6 +3,7 @@ library(dplyr)
 library(tidyverse)
 library(psych)
 library(corrplot)
+environment(nloptwrap)$defaultControl
 library(lme4)
 library(ggpubr)
 library(car)
@@ -41,13 +42,13 @@ ggplot(adf %>% filter(!is.na(lethgrp)), aes(log(k), choice, color = as.character
 dev.off()
 
 
-# initial model looking at the three sites
+# initial model looking at the three sites -- now converging!
 # 1 = NYC, 2 = PGH, 3 = Columbus
-m1 <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + (1|site_code/subject), family = binomial, adf)
+m1 <- glmer(choice ~ logk_sc * lethgrp + logk_sc * site_code + (1|subject), family = binomial, adf, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
 summary(m1)
 while (any(grepl("failed to converge", m1@optinfo$conv$lme4$messages) )) {
   ss <- getME(m1,c("theta","fixef"))
-  m1 <- update(m1, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
+  m1 <- update(m1, start=ss, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap","bobyqa"),optCtr=list(maxfun=2e5)))}
 summary(m1)
 Anova(m1, '3')
 vif(m1)
