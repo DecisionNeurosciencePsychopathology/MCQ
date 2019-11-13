@@ -136,66 +136,23 @@ summary(m2g)
 Anova(m2g, '3')
 
 
-# attributes -- these are refusing to converge no matter what
-m3a <- glmer(choice ~ immMag_sc * lethgrp + immMag_sc *scale(educa_true)+ delayMag_sc * lethgrp + delayMag_sc *scale(educa_true)+ 
-               delay_sc * lethgrp + delay_sc *scale(educa_true)+ 
+# attributes -- converges if you avoid the delay * education interaction
+m3a <- glmer(choice ~ immMag_sc * lethgrp + immMag_sc * scale(educa_true) + delayMag_sc * lethgrp + delayMag_sc * scale(educa_true) +
+               delay_sc * lethgrp + 
                (1|subject), family = binomial, adf %>% filter(site_code!=2),
              control = glmerControl(optimizer = "nloptwrap",nAGQ0initStep=FALSE))
 while (any(grepl("failed to converge", m3a@optinfo$conv$lme4$messages) )) {
   print(m3a@optinfo$conv$lme4$messages)
   ss <- getME(m3a,c("theta","fixef"))
   # magic ingredient: nAGQ0initStep=FALSE to get good initial estimates!
-  m3a <- update(m3a, start=ss,  control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e6)))} 
-ss <- getME(m3a,c("theta","fixef"))
-m3a <- update(m3a, start=ss,  control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = c("nloptwrap", "bobyqa"),optCtr=list(maxfun=2e6))) 
+  m3a <- update(m3a, start=ss,  control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = c("nloptwrap", "bobyqa"),optCtr=list(maxfun=2e6)))} 
 summary(m3a)
 Anova(m3a, '3')
+vif(m3a)
 
 ############
-# Pittsburgh models not run on AFSP
+# additional Pittsburgh models not run on AFSP
 
-# run models on other attributes
-# immediate
-m4e <- glmer(choice ~ immMag_sc * groupLeth + immMag_sc *Gender + immMag_sc *income_sc + immMag_sc *education_sc + (1|ID), family = binomial, df)
-summary(m4e)
-Anova(m4e, '3')
-ss <- getME(m4e,c("theta","fixef"))
-m4e <- update(m4e, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))
-summary(m4e)
-Anova(m4e, '3')
-vif(m4e)
-
-# delayed mag
-m4f <- glmer(choice ~ delayMag_sc * groupLeth + delayMag_sc *Gender + delayMag_sc *income_sc + delayMag_sc *education_sc + (1|ID), family = binomial, df)
-summary(m4f)
-Anova(m4f, '3')
-ss <- getME(m4f,c("theta","fixef"))
-m4f <- update(m4f, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))
-summary(m4f)
-Anova(m4f, '3')
-vif(m4f)
-
-# delay
-m4g <- glmer(choice ~ delay_sc * groupLeth + delay_sc *Gender + delay_sc *income_sc + delay_sc *education_sc + (1|ID), family = binomial, df)
-summary(m4g)
-Anova(m4g, '3')
-ss <- getME(m4g,c("theta","fixef"))
-m4g <- update(m4g, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))
-summary(m4g)
-Anova(m4g, '3')
-vif(m4g)
-
-#all
-m4h <- glmer(choice ~ immMag_sc * groupLeth + immMag_sc *Gender + immMag_sc *income_sc + immMag_sc *education_sc + 
-               delayMag_sc * groupLeth + delayMag_sc *Gender + delayMag_sc *income_sc + delayMag_sc *education_sc +
-               delay_sc * groupLeth + delay_sc *Gender + delay_sc *income_sc + delay_sc *education_sc + 
-               (1|ID), family = binomial, df)
-while (any(grepl("failed to converge", m4h@optinfo$conv$lme4$messages) )) {
-  ss <- getME(m4h,c("theta","fixef"))
-  m4h <- update(m4h, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
-summary(m4h)
-Anova(m4h, '3')
-vif(m4h)
 
 
 # go back to log(k), check cognitive confounds
