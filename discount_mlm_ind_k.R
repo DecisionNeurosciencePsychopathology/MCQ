@@ -49,6 +49,13 @@ df <- df %>% mutate(choiceChar = case_when(
     Group=='IDE' ~ 'IDE',
     Group=='HC' ~ 'HC'),
   groupLeth = as.factor(groupLeth),
+  groupLeth_n = case_when(
+    Group=='ATT' & highest_lethality>3 ~ 'High-lethality attempters, n = 66',
+    Group=='ATT' & highest_lethality<4 ~ 'Low-lethality attempters, n = 68',
+    Group=='DEP' ~ 'Non-suicidal depressed, n = 94',
+    Group=='IDE' ~ 'Suicide ideators, n = 79',
+    Group=='HC' ~ 'Healthy controls, n = 102'),
+  groupLeth_n = as.factor(groupLeth_n),
   age_sc = scale(Age),
   education_sc = scale(Education),
   drs_sc = scale(drs.score),
@@ -114,8 +121,9 @@ ggplot(df, aes(log(magRatio), choice)) + geom_smooth(method = "glm", method.args
 ggplot(df, aes(log(k), choice)) + geom_smooth(method = "glm", method.args = list(family = "binomial"))
 
 setwd('~/OneDrive/papers/discounting/plots/')
-pdf("discounting_choice_by_k_group.pdf", height = 6, width = 8)
-ggplot(df %>% filter(!is.na(groupLeth)), aes(log(k), choice, color = groupLeth)) + geom_smooth(method = "glm", method.args = list(family = "binomial"))
+pdf("discounting_choice_by_k_group_small.pdf", height = 4, width = 6)
+ggplot(df %>% filter(!is.na(groupLeth_n)), aes(log(k), choice, color = groupLeth_n)) + 
+  geom_smooth(method = "glm", method.args = list(family = "binomial")) + geom_hline(yintercept = .5)
 dev.off()
 ggplot(df, aes(log(k), choice, color = groupLeth)) + geom_smooth(method = "glm", method.args = list(family = "binomial")) + facet_wrap(~immMag >50)
 
