@@ -88,8 +88,6 @@
                 demo$P1condate, na.rm=T))->demo
   demo[-c(1:4,13)]->demo
   demo[-which(is.na(demo$consentdate)),]->demo
-  
-   
 
 #MCQdata  
   #Access MCQ
@@ -389,44 +387,66 @@
       ymd(suihx$sahx_sadate)->suihx$sahx_sadate
   #Root
       root="C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/"
-    ###Access
-      ##Neg out
-        negout<-read.csv(file = paste0(root, "A_NEGOUT.csv"))             
-        negout[c(1,2,9,10,12,13,15, 20:23)]->negout
-        #fix dates
-        mdy(negout$CDATE)->negout$CDATE
-        mdy(negout$DATE1)->negout$DATE1
-        mdy(negout$DATE2)->negout$DATE2
-        mdy(negout$DATE3)->negout$DATE3
-        mdy(negout$ATTDATE)->negout$ATTDATE
-        mdy(negout$ATTDATE2)->negout$ATTDATE2
-        mdy(negout$ATTDATE3)->negout$ATTDATE3
-        mdy(negout$ATTDATE4)->negout$ATTDATE4
-        #Put dates with lethalities
-        negout[c(1,3,4)]->negatt1
-        names(negatt1)[c(2,3)]<-c("DATE","Lethality")
-        negout[c(1,5:6)]->negatt2
-        names(negatt2)[c(2,3)]<-c("DATE","Lethality")
-        negout[c(1, 7:11)]->negout
-        gather(negout,key="ATT",value="DATE", -ID)->negout
-        negout[-2]->negout
-        na.rm(negout)->negout
-        full_join(negout,negatt1)->negouts
-        full_join(negouts,negatt2)->negouts
-        negouts[which(!is.na(negouts$DATE)),]->negouts
-       
-      ##Suique
-        suique<-read.csv(file = paste0(root, "A_SQUEST.csv"))
-        suique[c(1,2,14,16,18,20,22,23,25,26,28,29,31,32,34,35)]->suique
-        #fix dates
-        mdy(suique$MRATTMPT)->suique$MRATTMPT
-        mdy(suique$MLDATE)->suique$MLDATE
-        mdy(suique$DATE1)->suique$DATE1
-        mdy(suique$DATE2)->suique$DATE2
-        mdy(suique$DATE3)->suique$DATE3
-        mdy(suique$DATE4)->suique$DATE4
-        mdy(suique$DATE5)->suique$DATE5
-        #put dates with lethalities
+  ###Access
+    #Negative outcomes form
+      #grab form
+      negout<-read.csv(file = paste0(root, "A_NEGOUT.csv"))             
+      negout[c(1,2,20:23)]->negout
+      #fix dates
+      as.Date(mdy(negout$CDATE))->negout$CDATE
+      as.Date(mdy(negout$ATTDATE))->negout$ATTDATE
+      as.Date(mdy(negout$ATTDATE2))->negout$ATTDATE2
+      as.Date(mdy(negout$ATTDATE3))->negout$ATTDATE3
+      as.Date(mdy(negout$ATTDATE4))->negout$ATTDATE4
+      #Make one column with all atts and dates
+      gather(negout,key="ATT",value="DATE", -ID,-CDATE)->negout2
+      #date fix again  
+      as.Date(negout2$DATE)->negout2$DATE
+      #remove non-attempts
+      negout2[-which(is.na(negout2$DATE)),]->negout2
+      #Grab lethalities form
+      leths<-read.csv(file = paste0(root, "S_LETH.csv"))
+      #Remove 99's
+      for (i in 1:nrow(leths[c(11,13, 15:21)])){
+      leths[i,c(11,13, 15:21)]<-sapply(leths[i,c(11,13, 15:21) ], function(x){
+      ifelse (x==99, x<-NA,x<-x)})}
+      #Grab max leth (only one we care about)
+      apply(leths[c(11,13, 15:21)], 1, function(x){max(x, na.rm=T)})->leths$max_leth
+      #If infinity, all were NA
+      leths[which(leths$max_leth==-Inf),"max_leth"]<-98
+      #Only non-aborted attempts
+      leths[which(leths$ABORT==1),"max_leth"]<-99
+      #Fix CDATE
+      as.Date(mdy(leths$CDATE))->leths$CDATE
+      #remove unwanted vars
+      leths[c(1,2,22)]->leths2
+      #make new variable, id and cdate
+      negout2 %>% mutate(newvar=paste0(ID, CDATE))->negout2
+      leths %>% mutate(newvar=paste0(ID, CDATE))->leths
+      #combine based on newvar
+      leths$max_leth[match(negout2$newvar, leths$newvar)]->negout2$max_leth
+      #Two people's CDATEs were off by 1 day, add in manually
+      negout2[which(negout2$ID=="114567"),"max_leth"]<-4
+      negout2[which(negout2$ID=="114572"),"max_leth"]<-8
+      #Remove 99's, these are aborted attempts
+      negout2[-which(negout2$max_leth==99),]->negout2
+      #remove unwanted variables
+      negout2[c(1,4,6)]->negout3
+      names(negout3)[3]<-"Lethality"
+    #Suicide questions form
+      #Grab form
+      suique<-read.csv(file = paste0(root, "S_SQUEST.csv"))
+      suique[c(1,2,16,18,20,22,24,25,27,28,30,31,33,34,36,37)]->suique
+      #fix dates
+      as.Date(mdy(suique$CDATE))->suique$CDATE
+      as.Date(mdy(suique$MRATTMPT))->suique$MRATTMPT
+      as.Date(mdy(suique$MLDATE))->suique$MLDATE
+      as.Date(mdy(suique$DATE1))->suique$DATE1
+      as.Date(mdy(suique$DATE2))->suique$DATE2
+      as.Date(mdy(suique$DATE3))->suique$DATE3
+      as.Date(mdy(suique$DATE4))->suique$DATE4
+      as.Date(mdy(suique$DATE5))->suique$DATE5
+      #put dates with lethalities
         suique[c(1,3,4)]->suiatt1
         names(suiatt1)[c(2,3)]<-c("DATE","Lethality")
         suique[c(1,5:6)]->suiatt2
@@ -438,8 +458,10 @@
         full_join(suique,suiatt1)->suiques
         full_join(suiques,suiatt2)->suiques
         suiques[which(!is.na(suiques$DATE)),]->suiques
-      ##Merge Access suique and negout
-        full_join(negouts,suiques)->accATTs
+      #Put together
+        rbind(suiques, negout3)->atts
+        atts->accATTs
+        #full_join(negouts,suiques)->accATTs
         
     #Change IDs and match redcap and access
         accATTs<-bsrc.findid(accATTs,idmap = idmap,id.var = "ID")
@@ -448,7 +470,6 @@
         suihx<-data.frame(masterdemoid=suihx$masterdemoid, Lethality=suihx$sahx_lr,
                           DATE=suihx$sahx_sadate)
         as.integer(as.character(suihx$Lethality))->suihx$Lethality
-        suihx
         full_join(suihx,accATTs)->suicideatts
   #Remove duplicate attempts
     #make new variable with date and id
@@ -551,6 +572,7 @@
   #Redcap
     athf<-data.frame(ID=p2$data$registration_redcapid, event=p2$data$redcap_event_name, date=p2$data$bq_date,
                      score=p2$data$athf_maxnum)
+    as.character(athf$ID)->athf$ID
     bsrc.findid(athf,idmap = idmap,id.var = "ID")->athf
     athf[which(grepl("baseline", athf$event)),]->athf
   #Combine
@@ -574,6 +596,7 @@
                      cirs7=p2$data$cirsg_7_s, cirs8=p2$data$cirsg_8_s, cirs9=p2$data$cirsg_9_s,
                      cirs10=p2$data$cirsg_10_s, cirs11=p2$data$cirsg_11_s, cirs12=p2$data$cirsg_12_s,
                      cirs13=p2$data$cirsg_13_s)
+    as.character(cirs$ID)->cirs$ID
     bsrc.findid(cirs,idmap = idmap,id.var = "ID")->cirs
     cirs[which(grepl("baseline", cirs$event)),]->cirs
     #score
@@ -602,7 +625,7 @@
   
   #CURRENTLY remove bad ids
     #badids
-    Finaldf[which(!Finaldf$ID %in% badids),]->Finaldf
+    #Finaldf[which(!Finaldf$ID %in% badids),]->Finaldf
   #Add variable for who is in Dombrovski 2011 paper
     dom2011<-read.csv(file = "C:/Users/buerkem/OneDrive - UPMC/Documents/Data pulls/MCQ/Dombrovski 2011 subs.csv")
     as.numeric(gsub(",","",as.character(dom2011$ID)))->dom2011$ID
@@ -618,5 +641,12 @@
     
     
 #Write data to file
-write.csv(Finaldf,"C:/Users/buerkem/Box/skinner/data/delay discounting/MCQwithdemo.csv")
+  #Exclude 4 ATTs w/o leth data, 1 w/o ANY att data
+    Finaldf[-which(Finaldf$Group=="ATT" & is.na(Finaldf$highest_lethality)),]->Finaldf
+    write.csv(Finaldf,"C:/Users/buerkem/Box/skinner/data/delay discounting/MCQwithdemo3.csv")
+
+#No IDEs with att
+    Finaldf[which(Finaldf$Group=="IDE" & !is.na(Finaldf$highest_lethality)),]
+#This is fine
+    unique(Finaldf[which(Finaldf$highest_lethality==0),"ID"])
 
