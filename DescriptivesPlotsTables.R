@@ -55,6 +55,31 @@ pdf("discounting_choice_by_k_group_pit_non_afsp.pdf", height = 6, width = 12)
 ggplot(non_afsp_subs_long, aes(log(k), choice, color = groupLeth)) + geom_smooth(method = "glm", method.args = list(family = "binomial")) 
 dev.off()
 
+non_afsp_subs_long$groupLeth <- factor(non_afsp_subs_long$groupLeth, levels = c("HC", "DEP", "IDE", "LL", "HL"))
+
+# try a Wes Anderson version
+library(wesanderson)
+pal = wes_palette("Zissou1", type = "discrete")
+pdf("discounting_choice_by_k_group_pit_non_afsp_wa.pdf", width = 4, height = 3.5)
+ggplot(non_afsp_subs_long, aes(log(k), choice, color = groupLeth)) + geom_smooth(method = "glm", method.args = list(family = "binomial")) +
+scale_color_manual(values = pal) + 
+  theme(panel.grid.major = element_line(colour = "grey45"), 
+        panel.grid.minor = element_line(colour = "grey45"), 
+        panel.background = element_rect(fill = 'grey40'))
+dev.off()
+
+ggplot(em2, aes(time, `Hippocampal response`, group = bin_center_z, color = bin_center_z)) + 
+  geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL),position = position_dodge(width = .5), size = .5) + geom_line(size = 1.5, position = position_dodge(width = .5)) + facet_wrap(~entropy) + theme(legend.position = "none") +
+  geom_vline(xintercept = 0, lty = 'dashed', color = 'red', size = 1.5) + xlab('Time') + scale_x_continuous(breaks = c(-2,-1,0,1,2)) + ylab('Hippocampal response') +
+  scale_color_gradientn(values = pal, guide = 'none') + 
+  theme(legend.title = element_blank(),
+        panel.grid.major = element_line(colour = "grey45"), 
+        panel.grid.minor = element_line(colour = "grey45"), 
+        panel.background = element_rect(fill = 'grey40'))
+
+dev.off()
+
+
 pdf("discounting_choice_by_k_group_pit_afsp.pdf", height = 6, width = 12)
 ggplot(afsp_pit_long, aes(log(k), choice, color = as.character(lethgrp))) + geom_smooth(method = "glm", method.args = list(family = "binomial"))
 dev.off()
@@ -599,8 +624,9 @@ stargazer(m3g, type="html", out="discount_pitMMSE.htm", report = "vcs*",
 m4 <- glmer(choice ~ immMag_sc * lethgrp_ref_hl +
                delayMag_sc * lethgrp_ref_hl +
                delay_sc * lethgrp_ref_hl +
-               (1|ID), family = binomial, non_afsp_subs_long)
+               (1|ID), family = binomial, non_afsp_subs_long, control=glmerControl(optimizer = "nloptwrap",optCtr=list(maxfun=2e5)))
 while (any(grepl("failed to converge", m4@optinfo$conv$lme4$messages) )) {
+  print(m4@optinfo$conv$lme4)
   ss <- getME(m4,c("theta","fixef"))
   m4 <- update(m4, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
 summary(m4)
