@@ -122,6 +122,9 @@
     names(MCQnewunique)<-paste("",gsub("mcq_","",names(MCQnewunique)))
     #Gather data
     gather(MCQnewunique, key="Item", value = "Response",-` masterdemoid`,-` bq_date`)->MCQgather
+    #Change new response to match old response (1->0, 2->1)
+    MCQgather[which(MCQgather$Response==1),"Response"]<-0
+    MCQgather[which(MCQgather$Response==2),"Response"]<-1
     #Match item level characteristics to new data
     items<-MCQold[1:30,2:5]
     as.numeric(MCQgather$Item)->MCQgather$Item
@@ -139,7 +142,7 @@
            excludes1=md$data$reg_term_excl_suicide, termp2=md$data$reg_term_reason_protect2,
            termp1=md$data$reg_term_reason_protect, terms2=md$data$reg_term_reason_suicid2,
            terms1=md$data$reg_term_reason_suicide)
-  terms %>% filter(P2condate!=""| P1condate!="" |S2condate!=""|S1condate!="")->terms
+  terms %>% filter(!is.na(P2condate)| !is.na(P1condate) | !is.na(S2condate)| !is.na(S1condate))->terms
   terms %>% filter(excludep2==1 | excludep1==1 | excludes2==1 |excludes1==1|termp2==3|
                    termp1==3 | terms2==3 | terms1==3)->terms
   terms<-bsrc.findid(terms,idmap = idmap,id.var = "ID")
@@ -643,10 +646,12 @@
 #Write data to file
   #Exclude 4 ATTs w/o leth data, 1 w/o ANY att data
     Finaldf[-which(Finaldf$Group=="ATT" & is.na(Finaldf$highest_lethality)),]->Finaldf
-    write.csv(Finaldf,"C:/Users/buerkem/Box/skinner/data/delay discounting/MCQwithdemo3.csv")
+    write.csv(Finaldf,"C:/Users/buerkem/Box/skinner/data/delay discounting/MCQwithdemo4.csv")
 
 #No IDEs with att
     Finaldf[which(Finaldf$Group=="IDE" & !is.na(Finaldf$highest_lethality)),]
 #This is fine
     unique(Finaldf[which(Finaldf$highest_lethality==0),"ID"])
+#Check to make sure errors were fixed
+    Finaldf %>% group_by(ID, Response) %>% summarise(Freq=n())->tbl
 
