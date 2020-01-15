@@ -23,6 +23,278 @@ load('afsp_non_pit_wide.Rda')
 load('afsp_pit_long.Rda')
 load('afsp_pit_wide.Rda')
 
+###Models controlling for Age, sex, education, race, income
+
+###Recode race variable into binary
+####not working currently for some reason/returns error that object "X6" not found
+#non_afsp_subs_long$Race <- recode(non_afsp_subs_long$Race,"X2=0; X3=0; X5=1; X6=0")
+
+afsp_pit_long$RACEN <- recode(afsp_pit_long$RACEN,"2=0; 4=0; 5=1; 6=0")
+afsp_non_pit_long$RACEN <- recode(afsp_non_pit_long$RACEN,"1=0; 2=0; 3=0; 4=0; 5=1; 6=0; 7=0")
+
+########Error in recode(non_afsp_subs_long$Race, "X2=0; X3=0; X6=0; X5=1") : 
+#in recode term:  X5=1
+#message: Error in eval(parse(text = strsplit(term, "=")[[1]][1])) : 
+  #object 'X5' not found
+non_afsp_subs_long$Race <- recode(non_afsp_subs_long$Race,"X2=0; X3=0; X6=0; X5=1")
+
+
+table(non_afsp_subs_long$Race)
+table(afsp_pit_long$RACEN)
+table(afsp_non_pit_long$RACEN)
+
+###change reference group for GLMs to high lethality
+non_afsp_subs_long$lethgrp_ref_hl <- relevel(non_afsp_subs_long$groupLeth, ref = 'HL')
+afsp_pit_long$lethgrp_ref_hl <- relevel(afsp_pit_long$lethgrp, ref = '3')
+afsp_non_pit_long$lethgrp_ref_hl <- relevel(afsp_non_pit_long$lethgrp, ref = '3')
+
+
+###Pitt Non AFSP, need to recode Race
+m7 <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * scale(Age) + logk_sc * as.factor(Race) + logk_sc * scale(Education) + 
+              logk_sc * scale(Income) + logk_sc * as.factor(Gender) + (1|ID), family = binomial, non_afsp_subs_long, 
+            control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+summary(m7)
+while (any(grepl("failed to converge", m7@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m7,c("theta","fixef"))
+  m7 <- update(m7, start=ss, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap","bobyqa"),optCtr=list(maxfun=2e5)))}
+summary(m7)
+Anova(m7, '3')
+vif(m7)
+####with race categorical, not binary--does not converge convergence code: 0
+##unable to evaluate scaled gradient
+##Model failed to converge: degenerate  Hessian with 2 negative eigenvalues
+m7 <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * scale(Age) + logk_sc * Race + logk_sc * scale(Education) + 
+              logk_sc * scale(Income) + logk_sc * as.factor(Gender) + (1|ID), family = binomial, non_afsp_subs_long, 
+            control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+summary(m7)
+while (any(grepl("failed to converge", m7@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m7,c("theta","fixef"))
+  m7 <- update(m7, start=ss, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap","bobyqa"),optCtr=list(maxfun=2e5)))}
+summary(m7)
+Anova(m7, '3')
+vif(m7)
+
+setwd('~/OneDrive/papers/discounting/plots/')
+####Regression Table
+stargazer(m7, type="html", out="discount_pit_non_afsp_covs.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
+###Pitt AFSP 
+###Model failed to converge with max|grad| = 0.0169537 (tol = 0.001, component 1)
+m7a <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * as.factor(RACEN) + logk_sc * scale(Age) + 
+               logk_sc * as.factor(sex) + logk_sc * scale(educa_true) + logk_sc * scale(MacarthurQ6) + (1|subject), family = binomial, afsp_non_pit_long, 
+             control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+summary(m7a)
+while (any(grepl("failed to converge", m7a@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m7a,c("theta","fixef"))
+  m7b <- update(m7a, start=ss, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap","bobyqa"),optCtr=list(maxfun=2e5)))}
+summary(m7a)
+Anova(m7a, '3')
+vif(m7a)
+
+####Regression Table
+stargazer(m7a, type="html", out="discount_pit_afsp_covs.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
+###Non Pitt AFSP with site code---converges
+m7b <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * site_code + logk_sc * as.factor(RACEN) + logk_sc * scale(Age) + 
+               logk_sc * as.factor(sex) + logk_sc * scale(educa_true) + logk_sc * scale(MacarthurQ6) + (1|subject), family = binomial, afsp_non_pit_long, 
+             control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+summary(m7b)
+while (any(grepl("failed to converge", m7b@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m7b,c("theta","fixef"))
+  m7b <- update(m7b, start=ss, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap","bobyqa"),optCtr=list(maxfun=2e5)))}
+summary(m7b)
+Anova(m7b, '3')
+vif(m7b)
+
+####Regression Table
+stargazer(m7b, type="html", out="discount_non_pit_afsp_covs.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
+
+
+#######################
+######################Rerunning main models without those who only chose all 0s or all 1s
+afsp_pit_long_filtered<-filter(afsp_pit_long, !subject %in% c("212856", "220104", "219675", "220597", "220772", "221295"))
+afsp_non_pit_long_filtered<-filter(afsp_non_pit_long, !subject %in% c("15", "59", "72", "103", "22042", "22154", "83", "105", "22244"))
+non_afsp_subs_long_filtered<-filter(non_afsp_subs_long, !ID %in% c("203803","208474","208485","208735","209581","209635","209660","209951", "210873", "212586",
+                                                                   "212856", "216603", "217988", "219675", "220104", "220513", "220597", "220678", "220772", 
+                                                                   "221037", "221167", "221181", "221292", "221295", "221423", "221681", "221726", "222198", "431023", "431209"))
+
+###change reference group for GLMs to high lethality
+afsp_pit_long_filtered$lethgrp_ref_hl <- relevel(afsp_pit_long_filtered$lethgrp, ref = '3')
+afsp_non_pit_long_filtered$lethgrp_ref_hl <- relevel(afsp_non_pit_long_filtered$lethgrp, ref = '3')
+non_afsp_subs_long_filtered$lethgrp_ref_hl <- relevel(non_afsp_subs_long_filtered$groupLeth, ref = 'HL')
+
+#####AFSP Pitt, general model, no covariates, without those who only chose 0s or 1s
+m8 <- glmer(choice ~ logk_sc * lethgrp_ref_hl + (1|subject), family = binomial, afsp_pit_long_filtered, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+summary(m1)
+while (any(grepl("failed to converge", m8@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m8,c("theta","fixef"))
+  m8 <- update(m8, start=ss, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap","bobyqa"),optCtr=list(maxfun=2e5)))}
+summary(m8)
+Anova(m8, '3')
+vif(m8)
+
+####Regression Table
+stargazer(m8, type="html", out="discount_pit_afsp_withoutAlLZerosOrAllOnes.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
+#####AFSP NON PITT
+#####AFSP Non Pitt general model no covariates, without those who only chose all 0s or all 1s
+m8a <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * site_code + (1|subject), family = binomial, afsp_non_pit_long_filtered,  control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+summary(m8a)
+while (any(grepl("failed to converge", m8a@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m8a,c("theta","fixef"))
+  m8a <- update(m8a, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
+summary(m8a)
+Anova(m8a, '3')
+vif(m8a)
+
+####Regression Table
+stargazer(m8a, type="html", out="discount_non_pit_afsp_withoutAlLZerosOrAllOnes.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
+
+######
+#####Pitt general model no covariates without those who only chose all zeros or all ones
+m8b <- glmer(choice ~ logk_sc * lethgrp_ref_hl + (1|ID), family = binomial, non_afsp_subs_long_filtered,  control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+summary(m8b)
+while (any(grepl("failed to converge", m8b@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m8b,c("theta","fixef"))
+  m8b <- update(m8b, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
+summary(m8b)
+Anova(m8b, '3')
+vif(m8b)
+
+####Regression Table
+stargazer(m8b, type="html", out="discount_pit_non_afsp_withoutAlLZerosOrAllOnes.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
+
+#################ATTRIBUTES##########
+
+####NOT CONVERGING for non AFSP Pitt Warning messages:
+##1: In class(object) <- "environment" :
+#Setting class(x) to "environment" sets attribute to NULL; result will no longer be an S4 object
+#2: In class(object) <- "environment" :
+#Setting class(x) to "environment" sets attribute to NULL; result will no longer be an S4 object
+#3: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#unable to evaluate scaled gradient
+# 4: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#Model failed to converge: degenerate  Hessian with 1 negative eigenvalues
+
+m4 <- glmer(choice ~ immMag_sc * lethgrp_ref_hl +
+              delayMag_sc * lethgrp_ref_hl +
+              delay_sc * lethgrp_ref_hl +
+              (1|ID), family = binomial, non_afsp_subs_long)
+while (any(grepl("failed to converge", m4@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m4,c("theta","fixef"))
+  m4 <- update(m4, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
+summary(m4)
+Anova(m4, '3')
+vif(m4)
+
+####SAME WITH nAGQ0initStep=FALSE, still not converging
+
+m4 <- glmer(choice ~ immMag_sc * lethgrp_ref_hl +
+              delayMag_sc * lethgrp_ref_hl +
+              delay_sc * lethgrp_ref_hl +
+              (1|ID), family = binomial, non_afsp_subs_long)
+while (any(grepl("failed to converge", m4@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m4,c("theta","fixef"))
+  m4 <- update(m4, start=ss, control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = "nloptwrap",optCtr=list(maxfun=2e6)))} 
+summary(m4)
+Anova(m4, '3')
+vif(m4)
+
+######Pitt non AFSP without those who only chose all 0s or all 1s--still not converging
+m4a <- glmer(choice ~ immMag_sc * lethgrp_ref_hl +
+              delayMag_sc * lethgrp_ref_hl +
+              delay_sc * lethgrp_ref_hl +
+              (1|ID), family = binomial, non_afsp_subs_long_filtered)
+while (any(grepl("failed to converge", m4a@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m4a,c("theta","fixef"))
+  m4a <- update(m4a, start=ss, control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = "nloptwrap",optCtr=list(maxfun=2e6)))} 
+summary(m4a)
+Anova(m4a, '3')
+vif(m4a)
+
+
+###converges for AFSP NYC+OH
+m5 <- glmer(choice ~ scale(immMag) * lethgrp_ref_hl +
+              scale(delayMag) * lethgrp_ref_hl +
+              scale (delay) * lethgrp_ref_hl +
+              (1|subject), family = binomial, afsp_non_pit_long)
+while (any(grepl("failed to converge", m5@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m5,c("theta","fixef"))
+  m5 <- update(m5, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
+summary(m5)
+Anova(m5, '3')
+vif(m5)
+
+stargazer(m5, type="html", out="NonPittAFSP_Attributes.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
+
+###converges for AFSP Pitt
+m6 <- glmer(choice ~ scale(immMag) * lethgrp_ref_hl +
+              scale(delayMag) * lethgrp_ref_hl +
+              scale (delay) * lethgrp_ref_hl +
+              (1|subject), family = binomial, afsp_non_pit_long)
+while (any(grepl("failed to converge", m6@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m6,c("theta","fixef"))
+  m6 <- update(m6, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
+summary(m6)
+Anova(m6, '3')
+vif(m6)
+
+stargazer(m6, type="html", out="PittAFSP_Attributes.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
+
+
 #####Tables
 setwd('~/OneDrive/papers/discounting/plots/')
 ####summary table 1 Pitt non AFSP
@@ -584,81 +856,3 @@ stargazer(m3g, type="html", out="discount_pitMMSE.htm", report = "vcs*",
           notes.append = F)
 
 
-#################ATTRIBUTES##########
-
-####NOT CONVERGING for non AFSP Pitt Warning messages:
-##1: In class(object) <- "environment" :
-  #Setting class(x) to "environment" sets attribute to NULL; result will no longer be an S4 object
-#2: In class(object) <- "environment" :
-  #Setting class(x) to "environment" sets attribute to NULL; result will no longer be an S4 object
-#3: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-                  #unable to evaluate scaled gradient
-               # 4: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-                                  #Model failed to converge: degenerate  Hessian with 1 negative eigenvalues
-
-m4 <- glmer(choice ~ immMag_sc * lethgrp_ref_hl +
-               delayMag_sc * lethgrp_ref_hl +
-               delay_sc * lethgrp_ref_hl +
-               (1|ID), family = binomial, non_afsp_subs_long)
-while (any(grepl("failed to converge", m4@optinfo$conv$lme4$messages) )) {
-  ss <- getME(m4,c("theta","fixef"))
-  m4 <- update(m4, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
-summary(m4)
-Anova(m4, '3')
-vif(m4)
-
-####SAME WITH nAGQ0initStep=FALSE, still not converging
-
-m4 <- glmer(choice ~ immMag_sc * lethgrp_ref_hl +
-              delayMag_sc * lethgrp_ref_hl +
-              delay_sc * lethgrp_ref_hl +
-              (1|ID), family = binomial, non_afsp_subs_long)
-while (any(grepl("failed to converge", m4@optinfo$conv$lme4$messages) )) {
-  ss <- getME(m4,c("theta","fixef"))
-  m4 <- update(m4, start=ss, control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = "nloptwrap",optCtr=list(maxfun=2e6)))} 
-summary(m4)
-Anova(m4, '3')
-vif(m4)
-
-
-
-###converges for AFSP NYC+OH
-m5 <- glmer(choice ~ scale(immMag) * lethgrp_ref_hl +
-              scale(delayMag) * lethgrp_ref_hl +
-              scale (delay) * lethgrp_ref_hl +
-              (1|subject), family = binomial, afsp_non_pit_long)
-while (any(grepl("failed to converge", m5@optinfo$conv$lme4$messages) )) {
-  ss <- getME(m5,c("theta","fixef"))
-  m5 <- update(m5, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
-summary(m5)
-Anova(m5, '3')
-vif(m5)
-
-stargazer(m5, type="html", out="NonPittAFSP_Attributes.htm", report = "vcs*",
-          digits = 2, single.row=TRUE,omit.stat = "bic",
-          dep.var.labels = "Choice",
-          star.char = c("*", "**", "***"),
-          star.cutoffs = c(0.05, 0.01, 0.001),
-          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
-          notes.append = F)
-
-
-###converges for AFSP Pitt
-m6 <- glmer(choice ~ scale(immMag) * lethgrp_ref_hl +
-              scale(delayMag) * lethgrp_ref_hl +
-              scale (delay) * lethgrp_ref_hl +
-              (1|subject), family = binomial, afsp_non_pit_long)
-while (any(grepl("failed to converge", m6@optinfo$conv$lme4$messages) )) {
-  ss <- getME(m6,c("theta","fixef"))
-  m6 <- update(m6, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
-summary(m6)
-Anova(m6, '3')
-vif(m6)
-
-stargazer(m6, type="html", out="PittAFSP_Attributes.htm", report = "vcs*",
-          digits = 2, single.row=TRUE,omit.stat = "bic",
-          dep.var.labels = "Choice",
-          star.char = c("*", "**", "***"),
-          star.cutoffs = c(0.05, 0.01, 0.001),
-          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
-          notes.append = F)
