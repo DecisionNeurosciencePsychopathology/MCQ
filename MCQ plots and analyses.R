@@ -29,52 +29,63 @@ load('afsp_pit_wide.Rda')
 ####not working currently for some reason/returns error that object "X6" not found
 #non_afsp_subs_long$Race <- recode(non_afsp_subs_long$Race,"X2=0; X3=0; X5=1; X6=0")
 
-afsp_pit_long$RACEN <- recode(afsp_pit_long$RACEN,"2=0; 4=0; 5=1; 6=0")
-afsp_non_pit_long$RACEN <- recode(afsp_non_pit_long$RACEN,"1=0; 2=0; 3=0; 4=0; 5=1; 6=0; 7=0")
+afsp_pit_long<-afsp_pit_long %>% mutate(RaceBin = case_when(
+  RACEN == '2' ~ '0',
+  RACEN == '4' ~ '0',
+  RACEN == '5' ~ '1',
+  RACEN== '6' ~ '0'
+))
+
+afsp_non_pit_long<-afsp_non_pit_long %>% mutate(RaceBin = case_when(
+  RACEN == '1' ~ '0',
+  RACEN == '2' ~ '0',
+  RACEN == '3' ~ '0',
+  RACEN == '4' ~ '0',
+  RACEN == '5' ~ '1',
+  RACEN == '6' ~ '0',
+  RACEN == '7' ~ '0',
+))
+
+
+###afsp_pit_long$RACEN <- recode(afsp_pit_long$RACEN,"2=0; 4=0; 5=1; 6=0")
+###afsp_non_pit_long$RACEN <- recode(afsp_non_pit_long$RACEN,"1=0; 2=0; 3=0; 4=0; 5=1; 6=0; 7=0")
 
 ########Error in recode(non_afsp_subs_long$Race, "X2=0; X3=0; X6=0; X5=1") : 
 #in recode term:  X5=1
 #message: Error in eval(parse(text = strsplit(term, "=")[[1]][1])) : 
   #object 'X5' not found
-non_afsp_subs_long$Race <- recode(non_afsp_subs_long$Race,"X2=0; X3=0; X6=0; X5=1")
+
+non_afsp_subs_long <-  non_afsp_subs_long %>% mutate(RaceBin = case_when(
+  Race == 'X2' ~ '0',
+  Race == 'X3' ~ '0',
+  Race == 'X6' ~ '0',
+  Race == 'X5' ~ '1'
+))
 
 
-table(non_afsp_subs_long$Race)
-table(afsp_pit_long$RACEN)
-table(afsp_non_pit_long$RACEN)
+table(non_afsp_subs_long$RaceBin)
+table(afsp_pit_long$RaceBin)
+table(afsp_non_pit_long$RaceBin)
 
 ###change reference group for GLMs to high lethality
 non_afsp_subs_long$lethgrp_ref_hl <- relevel(non_afsp_subs_long$groupLeth, ref = 'HL')
 afsp_pit_long$lethgrp_ref_hl <- relevel(afsp_pit_long$lethgrp, ref = '3')
 afsp_non_pit_long$lethgrp_ref_hl <- relevel(afsp_non_pit_long$lethgrp, ref = '3')
 
-
-###Pitt Non AFSP, need to recode Race
-m7 <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * scale(Age) + logk_sc * as.factor(Race) + logk_sc * scale(Education) + 
-              logk_sc * scale(Income) + logk_sc * as.factor(Gender) + (1|ID), family = binomial, non_afsp_subs_long, 
-            control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
-summary(m7)
-while (any(grepl("failed to converge", m7@optinfo$conv$lme4$messages) )) {
-  ss <- getME(m7,c("theta","fixef"))
-  m7 <- update(m7, start=ss, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap","bobyqa"),optCtr=list(maxfun=2e5)))}
-summary(m7)
-Anova(m7, '3')
-vif(m7)
-####with race categorical, not binary--does not converge convergence code: 0
-##unable to evaluate scaled gradient
-##Model failed to converge: degenerate  Hessian with 2 negative eigenvalues
-m7 <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * scale(Age) + logk_sc * Race + logk_sc * scale(Education) + 
-              logk_sc * scale(Income) + logk_sc * as.factor(Gender) + (1|ID), family = binomial, non_afsp_subs_long, 
-            control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
-summary(m7)
-while (any(grepl("failed to converge", m7@optinfo$conv$lme4$messages) )) {
-  ss <- getME(m7,c("theta","fixef"))
-  m7 <- update(m7, start=ss, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap","bobyqa"),optCtr=list(maxfun=2e5)))}
-summary(m7)
-Anova(m7, '3')
-vif(m7)
-
 setwd('~/OneDrive/papers/discounting/plots/')
+
+###Pitt Non AFSP, Race binary---now converges!
+m7 <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * scale(Age) + logk_sc * as.factor(RaceBin) + logk_sc * scale(Education) + 
+              logk_sc * scale(Income) + logk_sc * as.factor(Gender) + (1|ID), family = binomial, non_afsp_subs_long, 
+            control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+summary(m7)
+while (any(grepl("failed to converge", m7@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m7,c("theta","fixef"))
+  m7 <- update(m7, start=ss, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap","bobyqa"),optCtr=list(maxfun=2e5)))}
+summary(m7)
+Anova(m7, '3')
+vif(m7)
+
 ####Regression Table
 stargazer(m7, type="html", out="discount_pit_non_afsp_covs.htm", report = "vcs*",
           digits = 2, single.row=TRUE,omit.stat = "bic",
@@ -239,11 +250,9 @@ summary(m4)
 Anova(m4, '3')
 vif(m4)
 
-######Pitt non AFSP without those who only chose all 0s or all 1s--still not converging
-m4a <- glmer(choice ~ immMag_sc * lethgrp_ref_hl +
-              delayMag_sc * lethgrp_ref_hl +
-              delay_sc * lethgrp_ref_hl +
-              (1|ID), family = binomial, non_afsp_subs_long_filtered)
+####One attribute interaction at a time Pitt NON AFSP
+
+m4a <- glmer(choice ~ immMag_sc * lethgrp_ref_hl + (1|ID), family = binomial, non_afsp_subs_long)
 while (any(grepl("failed to converge", m4a@optinfo$conv$lme4$messages) )) {
   ss <- getME(m4a,c("theta","fixef"))
   m4a <- update(m4a, start=ss, control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = "nloptwrap",optCtr=list(maxfun=2e6)))} 
@@ -251,6 +260,45 @@ summary(m4a)
 Anova(m4a, '3')
 vif(m4a)
 
+stargazer(m4a, type="html", out="NonPittAFSP_AttributesImmMagOnly.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
+m4b <- glmer(choice ~ delayMag_sc * lethgrp_ref_hl + (1|ID), family = binomial, non_afsp_subs_long)
+while (any(grepl("failed to converge", m4b@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m4b,c("theta","fixef"))
+  m4b <- update(m4b, start=ss, control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = "nloptwrap",optCtr=list(maxfun=2e6)))} 
+summary(m4b)
+Anova(m4b, '3')
+vif(m4b)
+
+stargazer(m4b, type="html", out="NonPittAFSP_AttributesDelayMagOnly.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
+m4c <- glmer(choice ~ delay_sc * lethgrp_ref_hl + (1|ID), family = binomial, non_afsp_subs_long)
+while (any(grepl("failed to converge", m4c@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m4c,c("theta","fixef"))
+  m4 <- update(m4c, start=ss, control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = "nloptwrap",optCtr=list(maxfun=2e6)))} 
+summary(m4c)
+Anova(m4c, '3')
+vif(m4c)
+
+stargazer(m4c, type="html", out="NonPittAFSP_AttributesDelayOnly.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
 
 ###converges for AFSP NYC+OH
 m5 <- glmer(choice ~ scale(immMag) * lethgrp_ref_hl +
@@ -295,31 +343,6 @@ stargazer(m6, type="html", out="PittAFSP_Attributes.htm", report = "vcs*",
 
 
 
-#####Tables
-setwd('~/OneDrive/papers/discounting/plots/')
-####summary table 1 Pitt non AFSP
-print(c1 <- c <- createTable(compareGroups(groupLeth ~ Age + Gender + Race + Ethnicity + Education + Income + highest_lethality, non_afsp_subs_wide)))
-export2csv(c1, "Pitt_nonAFSP_group_characteristics.csv")
-# summary table 2 Pitt AFSP
-print(c2 <- createTable(compareGroups(lethgrp ~ Age + sex + RACEN + ETHNIC + educa_true + MacarthurQ6 + MAXLETH_P,
-afsp_pit_wide)))
-export2csv(c2, "PittAfsp_group_characteristics.csv")
-# summary table 3 NYC + OH
-print(c3 <- createTable(compareGroups(lethgrp ~ site_code + Age + sex + RACEN + ETHNIC + educa_true + MacarthurQ6 + MAXLETH_P,
-afsp_non_pit_wide)))
-export2csv(c3, "NYCandOHafsp_group_characteristics.csv")
-
-###Descriptives
-###Pitt non-AFSP
-describe(non_afsp_subs_wide, na.rm = TRUE, interp=FALSE,skew = TRUE, ranges = TRUE,trim=.1,
-         type=3,check=TRUE,fast=NULL,quant=NULL,IQR=FALSE)
-##Pitt AFSP 
-describe(afsp_pit_wide, na.rm = TRUE, interp=FALSE,skew = TRUE, ranges = TRUE,trim=.1,
-         type=3,check=TRUE,fast=NULL,quant=NULL,IQR=FALSE)
-##PNYC and OH AFSP
-describe(non_pit_wide, na.rm = TRUE, interp=FALSE,skew = TRUE, ranges = TRUE,trim=.1,
-         type=3,check=TRUE,fast=NULL,quant=NULL,IQR=FALSE)
-
 #####Figure 1 psychometric curves
 setwd('~/OneDrive/papers/discounting/plots/')
 
@@ -357,9 +380,9 @@ pdf("modelm1.pdf", height = 6, width = 12)
 ggplot(em, aes(logk_sc, `Prefer later`, color = lethgrp_ref_hl, group = lethgrp_ref_hl)) +
   geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL), position=position_dodge(width=0.5)) + geom_line(position=position_dodge(width=0.5)) + geom_point(position=position_dodge(width=0.5))
 dev.off()
-###USE THIS ONE?
+###USE THIS ONE
 em <- as_tibble(emmeans::emtrends(m1, var = 'logk_sc', specs = 'lethgrp_ref_hl'))
-pdf("modelm1a.pdf", height = 6, width = 12)
+pdf("modelm1a.pdf", height = 3, width = 6)
 ggplot(em, aes(lethgrp_ref_hl, logk_sc.trend)) + geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL), position=position_dodge(width=0.5)) + geom_line(position=position_dodge(width=0.5)) + geom_point(position=position_dodge(width=0.5))
 dev.off()
 ####Regression Table
@@ -390,7 +413,7 @@ ggplot(em, aes(logk_sc, `Prefer later`, color = lethgrp_ref_hl, group = lethgrp_
 dev.off()
 ###USE THIS ONE?
 em <- as_tibble(emmeans::emtrends(m2, var = 'logk_sc', specs = 'lethgrp_ref_hl'))
-pdf("modelm2a.pdf", height = 6, width = 12)
+pdf("modelm2a.pdf", height = 3, width = 6)
 ggplot(em, aes(lethgrp_ref_hl, logk_sc.trend)) + geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL), position=position_dodge(width=0.5)) + 
   geom_line(position=position_dodge(width=0.5)) + geom_point(position=position_dodge(width=0.5))
 dev.off()
@@ -422,12 +445,12 @@ ggplot(em, aes(logk_sc, `Prefer later`, color = lethgrp_ref_hl, group = lethgrp_
 dev.off()
 ###USE THIS ONE?
 em <- as_tibble(emmeans::emtrends(m3, var = 'logk_sc', specs = 'lethgrp_ref_hl'))
-pdf("modelm3a.pdf", height = 6, width = 12)
+pdf("modelm3a.pdf", height = 3, width = 6)
 ggplot(em, aes(lethgrp_ref_hl, logk_sc.trend)) + geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL), position=position_dodge(width=0.5)) + geom_line(position=position_dodge(width=0.5)) 
 + geom_point(position=position_dodge(width=0.5))
 dev.off()
 ####Regression Table
-stargazer(m1, m2, m3, type="html", out="discount_pit_non_afsp.htm", report = "vcs*",
+stargazer(m3, type="html", out="discount_pit_non_afsp.htm", report = "vcs*",
           digits = 2, single.row=TRUE,omit.stat = "bic",
           dep.var.labels = "Choice",
           star.char = c("*", "**", "***"),
@@ -554,7 +577,7 @@ stargazer(m1f, type="html", out="discount_pit_afspSubstance.htm", report = "vcs*
           notes.append = F)
 
 
-####Substance
+####MMSE
 m1g <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * scale(MMSE_tot) + (1|subject), family = binomial, afsp_pit_long, 
              control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
 summary(m1g)
@@ -854,5 +877,80 @@ stargazer(m3g, type="html", out="discount_pitMMSE.htm", report = "vcs*",
           star.cutoffs = c(0.05, 0.01, 0.001),
           notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
           notes.append = F)
+
+#####CURVE FIGURES
+
+# Wes Anderson version
+library(wesanderson)
+
+##Pitt Non AFSP
+non_afsp_subs_long <- rename(non_afsp_subs_long, Lethality = "groupLeth")
+non_afsp_subs_long<-non_afsp_subs_long %>% mutate(Lethality = case_when(
+  Lethality == 'HC' ~ 'Controls',
+  Lethality == 'DEP' ~ 'MDD',
+  Lethality == 'IDE' ~ 'MDD+SI',
+  Lethality == 'LL' ~ 'Low Lethality SA',
+  Lethality == 'HL' ~ "High Lethality SA"
+))
+non_afsp_subs_long$Lethality <- factor(non_afsp_subs_long$Lethality, levels = c("Controls", "MDD", "MDD+SI", "Low Lethality SA", "High Lethality SA"))
+
+pal = wes_palette("Zissou1", type = "discrete")
+pdf("discounting_choice_by_k_group_pit_non_afsp_wa.pdf", width = 4, height = 3.5)
+ggplot(non_afsp_subs_long, aes(log(k), choice, color = Lethality)) + geom_smooth(method = "glm", method.args = list(family = "binomial")) +
+  scale_color_manual(values = pal) + 
+  theme(panel.grid.major = element_line(colour = "grey45"), 
+        panel.grid.minor = element_line(colour = "grey45"), 
+        panel.background = element_rect(fill = 'grey40'))
+dev.off()
+
+##Pitt AFSP
+
+afsp_pit_long <- rename(afsp_pit_long, Lethality = "lethgrp")
+afsp_pit_long<-afsp_pit_long %>% mutate(Lethality = case_when(
+  Lethality == '0' ~ 'Controls',
+  Lethality == '1' ~ 'MDD',
+  Lethality == '2' ~ 'Low Lethality SA',
+  Lethality == '3' ~ "High Lethality SA"
+))
+afsp_pit_long$Lethality <- factor(afsp_pit_long$Lethality, levels = c("Controls", "MDD", "Low Lethality SA", "High Lethality SA"))
+
+pal = wes_palette("Zissou1", 4, type = "continuous")
+pdf("discounting_choice_by_k_group_pit_afsp_wa.pdf", width = 4, height = 3.5)
+ggplot(afsp_pit_long, aes(log(k), choice, color = Lethality)) + geom_smooth(method = "glm", method.args = list(family = "binomial")) +
+  scale_color_manual(values = pal) + 
+  theme(panel.grid.major = element_line(colour = "grey45"), 
+        panel.grid.minor = element_line(colour = "grey45"), 
+        panel.background = element_rect(fill = 'grey40'))
+dev.off()
+
+
+
+
+
+
+##Non-Pitt AFSP
+afsp_non_pit_long <- rename(afsp_non_pit_long, Lethality = "lethgrp")
+afsp_non_pit_long<-afsp_non_pit_long %>% mutate(Lethality = case_when(
+  Lethality == '0' ~ 'Controls',
+  Lethality == '1' ~ 'MDD',
+  Lethality == '2' ~ 'Low Lethality SA',
+  Lethality == '3' ~ "High Lethality SA"
+))
+afsp_non_pit_long$Lethality <- factor(afsp_non_pit_long$Lethality, levels = c("Controls", "MDD", "Low Lethality SA", "High Lethality SA"))
+
+pal = wes_palette("Zissou1", 4, type = "continuous")
+pdf("discounting_choice_by_k_group_non_pit_afsp_wa.pdf", width = 4, height = 3.5)
+ggplot(afsp_non_pit_long, aes(log(k), choice, color = Lethality)) + geom_smooth(method = "glm", method.args = list(family = "binomial")) +
+  scale_color_manual(values = pal) + 
+  theme(panel.grid.major = element_line(colour = "grey45"), 
+        panel.grid.minor = element_line(colour = "grey45"), 
+        panel.background = element_rect(fill = 'grey40'))
+dev.off()
+
+
+
+
+
+
 
 
