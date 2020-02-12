@@ -250,6 +250,26 @@ summary(m4)
 Anova(m4, '3')
 vif(m4)
 
+######without delay_sc
+
+m4 <- glmer(choice ~ immMag_sc * lethgrp_ref_hl +
+              delayMag_sc * lethgrp_ref_hl +
+              (1|ID), family = binomial, non_afsp_subs_long)
+while (any(grepl("failed to converge", m4@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m4,c("theta","fixef"))
+  m4 <- update(m4, start=ss, control=glmerControl(nAGQ0initStep=FALSE,restart_edge = FALSE, optimizer = "nloptwrap",optCtr=list(maxfun=2e6)))} 
+summary(m4)
+Anova(m4, '3')
+vif(m4)
+
+stargazer(m4, type="html", out="NonAFSP_AttributesWithoutDelay.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
 ####One attribute interaction at a time Pitt NON AFSP
 
 m4a <- glmer(choice ~ immMag_sc * lethgrp_ref_hl + (1|ID), family = binomial, non_afsp_subs_long)
@@ -300,10 +320,10 @@ stargazer(m4c, type="html", out="NonPittAFSP_AttributesDelayOnly.htm", report = 
           notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
           notes.append = F)
 
-###converges for AFSP NYC+OH
+###converges for AFSP NYC+OH---check on site code
 m5 <- glmer(choice ~ scale(immMag) * lethgrp_ref_hl +
               scale(delayMag) * lethgrp_ref_hl +
-              scale (delay) * lethgrp_ref_hl +
+              scale (delay) * lethgrp_ref_hl + 
               (1|subject), family = binomial, afsp_non_pit_long)
 while (any(grepl("failed to converge", m5@optinfo$conv$lme4$messages) )) {
   ss <- getME(m5,c("theta","fixef"))
@@ -321,11 +341,11 @@ stargazer(m5, type="html", out="NonPittAFSP_Attributes.htm", report = "vcs*",
           notes.append = F)
 
 
-###converges for AFSP Pitt
+###AFSP Pitt
 m6 <- glmer(choice ~ scale(immMag) * lethgrp_ref_hl +
               scale(delayMag) * lethgrp_ref_hl +
               scale (delay) * lethgrp_ref_hl +
-              (1|subject), family = binomial, afsp_non_pit_long)
+              (1|subject), family = binomial, afsp_pit_long)
 while (any(grepl("failed to converge", m6@optinfo$conv$lme4$messages) )) {
   ss <- getME(m6,c("theta","fixef"))
   m6 <- update(m6, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
