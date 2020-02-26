@@ -969,8 +969,18 @@ dev.off()
 
 
 
+# variance in random intercept (time preference) vs. random slope of logK (value sensitivity)
 
+rm1 <- glmer(choice ~ logk_sc + (1 + logk_sc|ID), family = binomial, non_afsp_subs_long, 
+            control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+summary(rm1)
 
-
+m100 <- glmer(choice ~ logk_sc + (1|ID), family = binomial, non_afsp_subs_long, 
+             control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+m101 <- glmer(choice ~ logk_sc + lethgrp_ref_hl + (1|ID), family = binomial, non_afsp_subs_long, 
+              control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+m102 <- glmer(choice ~ logk_sc * lethgrp_ref_hl + (1|ID), family = binomial, non_afsp_subs_long, 
+              control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+anova(m100, m101, m102)
 
 

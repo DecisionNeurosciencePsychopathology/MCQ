@@ -23,6 +23,10 @@ load('afsp_non_pit_wide.Rda')
 load('afsp_pit_long.Rda')
 load('afsp_pit_wide.Rda')
 
+# find all-delayed subjects
+non_afsp_subs_long <- non_afsp_subs_long %>% group_by(ID) %>% mutate(n_imm_choices = sum(choice==1)) %>% ungroup()
+
+
 #####Tables
 setwd('~/OneDrive/papers/discounting/plots/')
 ####summary table 1 Pitt non AFSP
@@ -624,11 +628,11 @@ stargazer(m3g, type="html", out="discount_pitMMSE.htm", report = "vcs*",
 m4 <- glmer(choice ~ immMag_sc * lethgrp_ref_hl +
                delayMag_sc * lethgrp_ref_hl +
                delay_sc * lethgrp_ref_hl +
-               (1|ID), family = binomial, non_afsp_subs_long, control=glmerControl(optimizer = "nloptwrap",optCtr=list(maxfun=2e5)))
+               (1|ID), family = binomial, non_afsp_subs_long %>% filter(n_imm_choices>0), control=glmerControl(optimizer = "nloptwrap",optCtr=list(maxfun=2e5)))
 while (any(grepl("failed to converge", m4@optinfo$conv$lme4$messages) )) {
-  print(m4@optinfo$conv$lme4)
+  print(m4@optinfo$conv$lme4$messages)
   ss <- getME(m4,c("theta","fixef"))
-  m4 <- update(m4, start=ss, control=glmerControl(optimizer = "bobyqa",optCtr=list(maxfun=2e5)))}
+  m4 <- update(m4, start=ss, control=glmerControl(optimizer = "nloptwrap",optCtr=list(maxfun=2e5)))}
 summary(m4)
 Anova(m4, '3')
 vif(m4)
