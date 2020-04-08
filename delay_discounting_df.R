@@ -828,7 +828,7 @@ negout<-read_xlsx("/Users/mogoverde/Box/codes/Data pulls/Trust/negoutfu.xlsx")
     BRNDMG[3:4]->BRNDMG
     
     merge(MCQdata3, BRNDMG, by="masterdemoid", all.x=T)->MCQdata4
-    write.csv(MCQdata4, "MCQdata_4-8-2020")
+    write.csv(MCQdata4, "/Users/mogoverde/Box/skinner/projects_analyses/delay discounting data/MCQdata_4-8-2020.csv")
 
 
 
