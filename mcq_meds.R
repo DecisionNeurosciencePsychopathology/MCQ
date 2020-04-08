@@ -71,7 +71,7 @@ mutate(result2, opis=ifelse(opinum>0,1,0))->result2
 mutate(result2, antis=ifelse(antinum>0,1,0))->result2
 
 result2[c("masterdemoid","sednum","opinum","antinum","seds","opis","antis")]->MEDS
-
+write.csv(MEDS, "MCQ_MEDS_4-8-2020.csv")
   
   #setwd("/Users/mogoverde/Desktop")
   #write.csv(check,"meds_nostart.csv")

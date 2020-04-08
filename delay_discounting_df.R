@@ -787,13 +787,48 @@ merge(MCQdata2, bsia, by="masterdemoid", all.x = T)->MCQdata3
 
 #Who is missing
 unique(MCQdata3[which(is.na(MCQdata3$bsi_a_total)),"masterdemoid"])
-
 unique(MCQdata3[which(is.na(MCQdata3$LP_numanx)),"masterdemoid"])
 
 setwd("C:/Users/buerkem/Box/skinner/data/delay discounting/")
-write.csv(MCQdata3,"MCQdata-2-5-2020.csv")
+#write.csv(MCQdata3,"MCQdata-2-5-2020.csv")
 
-
+#####Medications#####
+MCQdata2<-read.csv("/Users/mogoverde/Box/skinner/projects_analyses/delay discounting data/MCQdata-2-5-2020.csv")
+meds<-read.csv("MCQ_MEDS_4-8-2020.csv")
+meds$X<-NULL
+merge(meds, MCQdata2, by="masterdemoid")->MCQdata3
+####################
+library(readxl)
+library(na.tools)
+negout<-read_xlsx("/Users/mogoverde/Box/codes/Data pulls/Trust/negoutfu.xlsx")
+  negout2<-data.frame(ID=negout$ALL_SUBJECTS_DEMO_ID, date= negout$A_NEGOUT_CDate,
+                      brain_damage=negout$BRAINDAM)
+    na.rm(negout2)->negout2
+    bsrc.findid(negout2,idmap = idmap,id.var = "ID")->negout2
+    negout2[which(negout2$masterdemoid %in% MCQdata3$masterdemoid),]->negout2
+    negout2 %>% group_by(masterdemoid) %>% mutate(braindamage=ifelse(any(brain_damage==1),
+                                          1,ifelse(any(brain_damage==2),
+                                          2,ifelse(any(brain_damage==0),0,9))))->negout2
+  #Redcap
+    negout3<-data.frame(ID=p2$data$registration_redcapid, event=p2$data$redcap_event_name, BQdate=p2$data$bq_date,
+                     FUdate=p2$data$fug_date, brain_damage=p2$data$negout_4_fu)
+    as.character(negout3$ID)->negout3$ID
+    bsrc.findid(negout3,idmap = idmap,id.var = "ID")->negout3
+    negout3[-which(is.na(negout3$brain_damage)),]->negout3
+    negout3[which(negout3$masterdemoid %in% MCQdata3$masterdemoid),]->negout3
+    negout3 %>% group_by(masterdemoid) %>% mutate(braindamage=ifelse(any(brain_damage==1),
+                                          1,ifelse(any(brain_damage==2),
+                                          2,ifelse(any(brain_damage==0),0,9))))->negout3
+  #Combine
+    negout3$braindamage[match(negout2$masterdemoid, negout3$masterdemoid)]->negout2$braindmgrc
+    negout2 %>% group_by(masterdemoid) %>% mutate(BRAINDAMAGE=ifelse(any(na.omit(braindamage)==1) | any(na.omit(braindmgrc)==1),
+                                                  1,ifelse(any(braindamage==2) | any(na.omit(braindmgrc)==2),
+                                                  2, ifelse(any(braindamage==0) | any(na.omit(braindmgrc)==0),0,9))))->BRNDMG
+    BRNDMG %>% group_by(masterdemoid) %>% filter(row_number()==1)->BRNDMG
+    BRNDMG[3:4]->BRNDMG
+    
+    merge(MCQdata3, BRNDMG, by="masterdemoid", all.x=T)->MCQdata4
+    write.csv(MCQdata4, "MCQdata_4-8-2020")
 
 
 
