@@ -828,8 +828,49 @@ negout<-read_xlsx("/Users/mogoverde/Box/codes/Data pulls/Trust/negoutfu.xlsx")
     BRNDMG[3:4]->BRNDMG
     
     merge(MCQdata3, BRNDMG, by="masterdemoid", all.x=T)->MCQdata4
-    write.csv(MCQdata4, "/Users/mogoverde/Box/skinner/projects_analyses/delay discounting data/MCQdata_4-13-2020.csv")
-
+    MCQdata4[grepl("anx",names(MCQdata4))]<-NULL
+#Get scid anx again
+      #1.
+      sciddf<-data.frame(ID=p2$data$registration_redcapid, event=p2$data$redcap_event_name,
+              p2$data[grepl(paste0("scid_",c(17:37),collapse="|"),names(p2$data))])
+      #2. Event map data for scid (only given at BL, not catchup BL)
+      sciddf[grepl("baseline",sciddf$event) & !grepl("catchup", sciddf$event ),]->sciddf
+      #3. Remove NA's (if all values are NA)
+      sciddf[rowSums(is.na(sciddf) | sciddf=="" | sciddf=="NA")<78,]->sciddf
+      #4. Check if any duplicated IDs
+        #Remove if the full row is duplicated (same data) besides event name
+        sciddf[!duplicated(sciddf[-2]),]->sciddf
+        any(duplicated(sciddf$ID))
+      #5. Scoring
+        #Change all NAs to 1's
+        for(i in 1:nrow(sciddf)){
+          for (j in 1:ncol(sciddf[c(paste("scid_",17:23, "_s", seq(115, 127, 2), sep=""),
+          paste("scid_",24:37,"_s", c(129,139,141,147,151,157,161,165,
+                                      171,173,177,183,189,191),sep=""))])){
+            k<-names(sciddf[c(paste("scid_",17:23, "_s", seq(115, 127, 2), sep=""),
+          paste("scid_",24:37,"_s", c(129,139,141,147,151,157,161,165,
+                                      171,173,177,183,189,191),sep=""))])[j]
+            if(is.na(sciddf[i,k])){sciddf[i,k]<-1}}}
+        #Anxiety d/os
+          #Number of anxiety d/os in lifetime
+          rowSums(sciddf[grepl(paste0("_s", c(140,146,150,156,160,164,170,172,176,182,188,190), collapse="|"),names(sciddf))]>1)->sciddf$LP_numanx
+          #Presence of anxiety d/os in lifetime
+          sciddf$LP_presanx=ifelse(sciddf$LP_numanx>0,1,0)
+          #Number of anxiety d/os in past month
+          rowSums(sciddf[grepl(paste0("_s", c(141,147,151,157,161,165,171,173,177,183,189,191), collapse="|"),names(sciddf))]>1)->sciddf$PM_numanx
+          #Presence of anxiety d/os in past month
+          sciddf$PM_presanx=ifelse(sciddf$PM_numanx>0,1,0)
+          #ID map
+          as.character(sciddf$ID)->sciddf$ID
+          bsrc.findid(sciddf, idmap=idmap, "ID")->sciddf
+          any(!sciddf$ifexist)
+        #Final df only vars we want
+        sciddf[grepl("PM|LP|masterdemoid",names(sciddf))]->sciddf
+    #merge with MCQdata4
+        merge(MCQdata4, sciddf, all.x = T, by="masterdemoid")->MCQdata5
+    
+    write.csv(MCQdata5, "/Users/mogoverde/Box/skinner/projects_analyses/delay discounting data/MCQdata_4-14-2020.csv")
+    
 
 
 
