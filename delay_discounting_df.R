@@ -853,11 +853,11 @@ negout<-read_xlsx("/Users/mogoverde/Box/codes/Data pulls/Trust/negoutfu.xlsx")
             if(is.na(sciddf[i,k])){sciddf[i,k]<-1}}}
         #Anxiety d/os
           #Number of anxiety d/os in lifetime
-          rowSums(sciddf[grepl(paste0("_s", c(140,146,150,156,160,164,170,172,176,182,188,190), collapse="|"),names(sciddf))]>1)->sciddf$LP_numanx
+          rowSums(sciddf[grepl(paste0("_s", c(140,146,150,156,160,164,170,172,176,182,188,190), collapse="|"),names(sciddf))]>2)->sciddf$LP_numanx
           #Presence of anxiety d/os in lifetime
           sciddf$LP_presanx=ifelse(sciddf$LP_numanx>0,1,0)
           #Number of anxiety d/os in past month
-          rowSums(sciddf[grepl(paste0("_s", c(141,147,151,157,161,165,171,173,177,183,189,191), collapse="|"),names(sciddf))]>1)->sciddf$PM_numanx
+          rowSums(sciddf[grepl(paste0("_s", c(141,147,151,157,161,165,171,173,177,183,189,191), collapse="|"),names(sciddf))]>2)->sciddf$PM_numanx
           #Presence of anxiety d/os in past month
           sciddf$PM_presanx=ifelse(sciddf$PM_numanx>0,1,0)
           #ID map
@@ -869,7 +869,7 @@ negout<-read_xlsx("/Users/mogoverde/Box/codes/Data pulls/Trust/negoutfu.xlsx")
     #merge with MCQdata4
         merge(MCQdata4, sciddf, all.x = T, by="masterdemoid")->MCQdata5
     
-    write.csv(MCQdata5, "/Users/mogoverde/Box/skinner/projects_analyses/delay discounting data/MCQdata_4-14-2020.csv")
+    write.csv(MCQdata5, "/Users/mogoverde/Box/skinner/projects_analyses/delay discounting data/MCQdata_4-14-2020-2.csv")
     
 
 
