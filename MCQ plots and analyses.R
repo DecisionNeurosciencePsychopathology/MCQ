@@ -14,6 +14,7 @@ library(optimx)
 library(VIM)
 library(stargazer)
 library(ggplot2)
+library(wesanderson)
 setwd("~/OneDrive/papers/discounting/data")
 
 load('non_afsp_subs_long.Rda')
@@ -22,6 +23,11 @@ load('afsp_non_pit_long.Rda')
 load('afsp_non_pit_wide.Rda')
 load('afsp_pit_long.Rda')
 load('afsp_pit_wide.Rda')
+
+###change reference group for GLMs to high lethality
+non_afsp_subs_long$lethgrp_ref_hl <- relevel(non_afsp_subs_long$groupLeth, ref = 'HL')
+afsp_pit_long$lethgrp_ref_hl <- relevel(afsp_pit_long$lethgrp, ref = '3')
+afsp_non_pit_long$lethgrp_ref_hl <- relevel(afsp_non_pit_long$lethgrp, ref = '3')
 
 ###Models controlling for Age, sex, education, race, income
 
@@ -67,10 +73,6 @@ table(non_afsp_subs_long$RaceBin)
 table(afsp_pit_long$RaceBin)
 table(afsp_non_pit_long$RaceBin)
 
-###change reference group for GLMs to high lethality
-non_afsp_subs_long$lethgrp_ref_hl <- relevel(non_afsp_subs_long$groupLeth, ref = 'HL')
-afsp_pit_long$lethgrp_ref_hl <- relevel(afsp_pit_long$lethgrp, ref = '3')
-afsp_non_pit_long$lethgrp_ref_hl <- relevel(afsp_non_pit_long$lethgrp, ref = '3')
 
 setwd('~/OneDrive/papers/discounting/plots/')
 
@@ -249,7 +251,7 @@ while (any(grepl("failed to converge", m4@optinfo$conv$lme4$messages) )) {
 summary(m4)
 Anova(m4, '3')
 vif(m4)
-
+car::Anova(m4)
 ######without delay_sc
 
 m4 <- glmer(choice ~ immMag_sc * lethgrp_ref_hl +
@@ -262,13 +264,6 @@ summary(m4)
 Anova(m4, '3')
 vif(m4)
 
-stargazer(m4, type="html", out="NonAFSP_AttributesWithoutDelay.htm", report = "vcs*",
-          digits = 2, single.row=TRUE,omit.stat = "bic",
-          dep.var.labels = "Choice",
-          star.char = c("*", "**", "***"),
-          star.cutoffs = c(0.05, 0.01, 0.001),
-          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
-          notes.append = F)
 
 ####One attribute interaction at a time Pitt NON AFSP
 
@@ -331,6 +326,7 @@ while (any(grepl("failed to converge", m5@optinfo$conv$lme4$messages) )) {
 summary(m5)
 Anova(m5, '3')
 vif(m5)
+car::Anova(m5)
 
 stargazer(m5, type="html", out="NonPittAFSP_Attributes.htm", report = "vcs*",
           digits = 2, single.row=TRUE,omit.stat = "bic",
@@ -341,7 +337,7 @@ stargazer(m5, type="html", out="NonPittAFSP_Attributes.htm", report = "vcs*",
           notes.append = F)
 
 
-###AFSP Pitt
+###AFSP Pitt converges
 m6 <- glmer(choice ~ scale(immMag) * lethgrp_ref_hl +
               scale(delayMag) * lethgrp_ref_hl +
               scale (delay) * lethgrp_ref_hl +
@@ -352,6 +348,7 @@ while (any(grepl("failed to converge", m6@optinfo$conv$lme4$messages) )) {
 summary(m6)
 Anova(m6, '3')
 vif(m6)
+car::Anova(m6)
 
 stargazer(m6, type="html", out="PittAFSP_Attributes.htm", report = "vcs*",
           digits = 2, single.row=TRUE,omit.stat = "bic",
@@ -384,7 +381,7 @@ afsp_pit_long$lethgrp_ref_hl <- relevel(afsp_pit_long$lethgrp, ref = '3')
 afsp_non_pit_long$lethgrp_ref_hl <- relevel(afsp_non_pit_long$lethgrp, ref = '3')
 
 #####AFSP PITT
-#####AFSP Pitt general model no covariates
+#####AFSP Pitt general model no covariates SAMPLE 2
 m1 <- glmer(choice ~ logk_sc * lethgrp_ref_hl + (1|subject), family = binomial, afsp_pit_long, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
 summary(m1)
 while (any(grepl("failed to converge", m1@optinfo$conv$lme4$messages) )) {
@@ -393,6 +390,7 @@ while (any(grepl("failed to converge", m1@optinfo$conv$lme4$messages) )) {
 summary(m1)
 Anova(m1, '3')
 vif(m1)
+car::Anova(m1)
 # model-predicted plot AFSP Pitt general model no covariates
 em <- as_tibble(emmeans::emmeans(m1, ~logk_sc | lethgrp_ref_hl, at = list(logk_sc = c(-2,2)))) %>% mutate(`Prefer later` = emmean)
 setwd('~/OneDrive/papers/discounting/plots/')
@@ -415,7 +413,7 @@ stargazer(m1, type="html", out="discount_pit_afsp.htm", report = "vcs*",
           notes.append = F)
 
 #####AFSP NON PITT
-#####AFSP Non Pitt general model no covariates
+#####AFSP Non Pitt general model no covariates SAMPLE 3
 m2 <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * site_code + (1|subject), family = binomial, afsp_non_pit_long,  control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
 summary(m2)
 while (any(grepl("failed to converge", m2@optinfo$conv$lme4$messages) )) {
@@ -424,6 +422,7 @@ while (any(grepl("failed to converge", m2@optinfo$conv$lme4$messages) )) {
 summary(m2)
 Anova(m2, '3')
 vif(m2)
+car::Anova(m2)
 # model-predicted plot AFSP Non Pitt general model no covariates
 em <- as_tibble(emmeans::emmeans(m2, ~logk_sc | lethgrp_ref_hl, at = list(logk_sc = c(-2,2)))) %>% mutate(`Prefer later` = emmean)
 setwd('~/OneDrive/papers/discounting/plots/')
@@ -447,7 +446,7 @@ stargazer(m2, type="html", out="discount_non_pit_afsp.htm", report = "vcs*",
           notes.append = F)
 
 ######
-#####Pitt general model no covariates
+#####Pitt general model no covariates SAMPLE 1
 m3 <- glmer(choice ~ logk_sc * lethgrp_ref_hl + (1|ID), family = binomial, non_afsp_subs_long,  control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
 summary(m3)
 while (any(grepl("failed to converge", m3@optinfo$conv$lme4$messages) )) {
@@ -456,6 +455,7 @@ while (any(grepl("failed to converge", m3@optinfo$conv$lme4$messages) )) {
 summary(m3)
 Anova(m3, '3')
 vif(m3)
+car::Anova(m3)
 # model-predicted plot AFSP Non Pitt general model no covariates
 em <- as_tibble(emmeans::emmeans(m3, ~logk_sc | lethgrp_ref_hl, at = list(logk_sc = c(-2,2)))) %>% mutate(`Prefer later` = emmean)
 setwd('~/OneDrive/papers/discounting/plots/')
@@ -463,7 +463,7 @@ pdf("modelm3.pdf", height = 6, width = 12)
 ggplot(em, aes(logk_sc, `Prefer later`, color = lethgrp_ref_hl, group = lethgrp_ref_hl)) +
   geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL), position=position_dodge(width=0.5)) + geom_line(position=position_dodge(width=0.5)) + geom_point(position=position_dodge(width=0.5))
 dev.off()
-###USE THIS ONE?
+###USE THIS ONE
 em <- as_tibble(emmeans::emtrends(m3, var = 'logk_sc', specs = 'lethgrp_ref_hl'))
 pdf("modelm3a.pdf", height = 3, width = 6)
 ggplot(em, aes(lethgrp_ref_hl, logk_sc.trend)) + geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL), position=position_dodge(width=0.5)) + geom_line(position=position_dodge(width=0.5)) 
@@ -577,8 +577,8 @@ stargazer(m1e, type="html", out="discount_pit_afspEducation.htm", report = "vcs*
           notes.append = F)
 
 
-####Substance
-m1f <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * as.factor(subany) + (1|subject), family = binomial, afsp_pit_long, 
+####Substance AND anxiety lifetime
+m1f <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * as.factor(subany) + logk_sc * as.factor(any_anxietyl) + (1|subject), family = binomial, afsp_pit_long, 
              control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
 summary(m1f)
 while (any(grepl("failed to converge", m1f@optinfo$conv$lme4$messages) )) {
@@ -588,7 +588,7 @@ summary(m1f)
 Anova(m1f, '3')
 vif(m1f)
 ####Regression Table Pitt AFSP substance
-stargazer(m1f, type="html", out="discount_pit_afspSubstance.htm", report = "vcs*",
+stargazer(m1f, type="html", out="discount_pit_afspSubstanceAnxiety.htm", report = "vcs*",
           digits = 2, single.row=TRUE,omit.stat = "bic",
           dep.var.labels = "Choice",
           star.char = c("*", "**", "***"),
@@ -717,8 +717,8 @@ vif(m2e)
             notes.append = F)
 
 
-####Substance
-m2f <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * site_code + logk_sc * as.factor(subany) + (1|subject), family = binomial, afsp_non_pit_long, 
+####Substance AND anxiety lifetime
+m2f <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * site_code + logk_sc * as.factor(subany) + logk_sc * as.factor(any_anxietyl) + (1|subject), family = binomial, afsp_non_pit_long, 
              control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
 summary(m2f)
 while (any(grepl("failed to converge", m2f@optinfo$conv$lme4$messages) )) {
@@ -727,8 +727,8 @@ while (any(grepl("failed to converge", m2f@optinfo$conv$lme4$messages) )) {
 summary(m2f)
 Anova(m2f, '3')
 vif(m2f)
-####Regression Table Pitt AFSP substance
-stargazer(m2f, type="html", out="discount_non_pit_afspSubstance.htm", report = "vcs*",
+####Regression Table Pitt AFSP substance and anxiety
+stargazer(m2f, type="html", out="discount_non_pit_afspSubstanceAnxiety.htm", report = "vcs*",
           digits = 2, single.row=TRUE,omit.stat = "bic",
           dep.var.labels = "Choice",
           star.char = c("*", "**", "***"),
@@ -758,7 +758,7 @@ stargazer(m2g, type="html", out="discount_non_pit_afspMMSE.htm", report = "vcs*"
 
 #############
 ########
-####Sensitivity Analyses age, sex, race, income, education, substance use, and global cognitive functioning
+####Sensitivity Analyses age, sex, race, income, education, substance use, brain damage cannot be ruled out, and global cognitive functioning
 ####Pitt sample 1
 #####Age
 m3a <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * scale(Age) + (1|ID), family = binomial, non_afsp_subs_long, 
@@ -856,11 +856,11 @@ stargazer(m3e, type="html", out="discount_pitEducation.htm", report = "vcs*",
           notes.append = F)
 
 
-####Substance NEED TO RECODE FIRST!!!
+####Substance NEED TO RECODE FIRST!!! and lifetime anxiety, sensitivity analyses
 ####recodes into 0 no, 1 yes substance use
 non_afsp_subs_long$lifetime.subs <- recode(non_afsp_subs_long$lifetime.subs,"0=0;1=1;2=1;3=1;4=1;7=1")
 
-m3f <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * as.factor(lifetime.subs) + (1|ID), family = binomial, non_afsp_subs_long, 
+m3f <- glmer(choice ~ logk_sc * lethgrp_ref_hl + logk_sc * as.factor(lifetime.subs) + logk_sc * as.factor(LP_presanx) + (1|ID), family = binomial, non_afsp_subs_long, 
              control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
 summary(m3f)
 while (any(grepl("failed to converge", m3f@optinfo$conv$lme4$messages) )) {
@@ -870,13 +870,36 @@ summary(m3f)
 Anova(m3f, '3')
 vif(m3f)
 ####Regression Table Pitt substance
-stargazer(m3f, type="html", out="discount_pitSubstance.htm", report = "vcs*",
+stargazer(m3f, type="html", out="discount_pitSubstanceAnxiety.htm", report = "vcs*",
           digits = 2, single.row=TRUE,omit.stat = "bic",
           dep.var.labels = "Choice",
           star.char = c("*", "**", "***"),
           star.cutoffs = c(0.05, 0.01, 0.001),
           notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
           notes.append = F)
+
+
+#####excluding those for whom brain damage cannot be ruled out
+non_afsp_subs_long_BrainDamage<-filter(non_afsp_subs_long, !ID %in% c("203521", "217418", "219052","221674","221715"))
+
+m3h <- glmer(choice ~ logk_sc * lethgrp_ref_hl  + (1|ID), family = binomial, non_afsp_subs_long_BrainDamage, 
+             control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
+summary(m3h)
+while (any(grepl("failed to converge", m3h@optinfo$conv$lme4$messages) )) {
+  ss <- getME(m3h,c("theta","fixef"))
+  m3g <- update(m3h, start=ss, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap","bobyqa"),optCtr=list(maxfun=2e5)))}
+summary(m3h)
+Anova(m3h, '3')
+vif(m3h)
+####Regression Table Pitt MMSE
+stargazer(m3h, type="html", out="discount_pitMMSE.htm", report = "vcs*",
+          digits = 2, single.row=TRUE,omit.stat = "bic",
+          dep.var.labels = "Choice",
+          star.char = c("*", "**", "***"),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+          notes.append = F)
+
 
 
 ####MMSE
@@ -969,18 +992,8 @@ dev.off()
 
 
 
-# variance in random intercept (time preference) vs. random slope of logK (value sensitivity)
 
-rm1 <- glmer(choice ~ logk_sc + (1 + logk_sc|ID), family = binomial, non_afsp_subs_long, 
-            control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
-summary(rm1)
 
-m100 <- glmer(choice ~ logk_sc + (1|ID), family = binomial, non_afsp_subs_long, 
-             control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
-m101 <- glmer(choice ~ logk_sc + lethgrp_ref_hl + (1|ID), family = binomial, non_afsp_subs_long, 
-              control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
-m102 <- glmer(choice ~ logk_sc * lethgrp_ref_hl + (1|ID), family = binomial, non_afsp_subs_long, 
-              control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
-anova(m100, m101, m102)
+
 
 
