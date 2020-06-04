@@ -101,8 +101,9 @@ for (id in ids) {
   for (k in ks) {
     df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k>k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k<k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
   }
-  df$k_sub[df$ID==id] <- geometric.mean(df$k[df$consistency==max(df$consistency[df$ID==id])])
-  df$max_consistency[df$ID==id] <- max(df$consistency[df$ID==id])
+  best <- df %>% filter(ID==id & consistency == max(consistency[ID==id])) %>% select(k, consistency)
+  df$k_sub[df$ID==id] <- geometric.mean(best$k)
+  df$max_consistency[df$ID==id] <- max(best$consistency)
 }
 df$log_k_sub = log(df$k_sub)
 sub_df1 <- df %>% select(ID, k_sub, log_k_sub, max_consistency, group) %>% unique()
