@@ -66,13 +66,17 @@ df$k_sub <- NA
 df$max_consistency <- NA
 for (id in ids) {
   for (k in ks) {
-    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k>k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k<k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
+    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k<k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k>k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
   }
   best <- df %>% filter(ID==id & consistency == max(consistency[ID==id])) %>% select(k, consistency)
   df$k_sub[df$ID==id] <- geometric.mean(best$k)
   df$max_consistency[df$ID==id] <- max(best$consistency)
 }
 df$log_k_sub = log(df$k_sub)
+
+####PLOTS to check
+ggplot(df, aes(log(k), consistency, color=groupLeth))+geom_line()
+ggplot(df, aes(log(k), consistency))+geom_line()
 
 sub_df <- df %>% select(ID, Group, groupLeth, k_sub, log_k_sub, max_consistency, Age, Gender, Race, Ethnicity, Education, Marital.status,
                         Income, ham17.score, SSI.score, SIS.score, drs.score, wtar.score, exit.score, mmse.score, highest_lethality,
@@ -125,3 +129,4 @@ adf <- adf %>% mutate(delayMag_sc = scale(delayMag),
 setwd('~/OneDrive/papers/discounting/data/')
 save(file = "discounting_processed_afsp.Rdata",list = ls(all = T))
 
+write_sav(non_afsp_subs_wide, "non_afsp_subs_wide.sav")

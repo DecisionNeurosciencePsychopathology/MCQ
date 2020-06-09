@@ -56,13 +56,18 @@ df$k_sub <- NA
 df$max_consistency <- NA
 for (id in ids) {
   for (k in ks) {
-    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k>k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k<k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
+    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k<k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k>k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
   }
   best <- df %>% filter(ID==id & consistency == max(consistency[ID==id])) %>% select(k, consistency)
   df$k_sub[df$ID==id] <- geometric.mean(best$k)
   df$max_consistency[df$ID==id] <- max(best$consistency)
 }
 df$log_k_sub = log(df$k_sub)
+
+####PLOTS to check
+ggplot(df, aes(log(k), consistency, color=lethgrp))+geom_line()
+ggplot(df, aes(log(k), consistency))+geom_line()
+
 
 sub_df <- df %>% select(ID, lethgrp, k_sub, log_k_sub, max_consistency, site_code) %>% unique()
 
@@ -74,5 +79,4 @@ save(file = 'afsp_subs_with_sub_Ks.Rda', afsp_subs_with_sub_Ks)
 write_sav(afsp_subs_with_sub_Ks, "afsp_subs_with_sub_Ks.sav")
 
 
-####check on consistency, unlike max_consistency, it varies across ppt depending on MCQ question number
-consistency_check<-df %>% select(ID, item, lethgrp, k_sub, log_k_sub, consistency, max_consistency, site_code)
+
