@@ -238,4 +238,6 @@ cor.test(all_sim_out$logk_group_z,all_sim_out$group_k_sim_diff) #somewhat positi
 
 M <- all_sim_out %>% select(intercept_z, sim_k_grp1, group_z, group_k_sim_diff, logk_group_z, group_noise_diff)
 K<-cor(M)
+pdf('vanessa_simulation_corrplot.pdf', height = 8, width = 8)
 corrplot(K, method="number")
+dev.off()

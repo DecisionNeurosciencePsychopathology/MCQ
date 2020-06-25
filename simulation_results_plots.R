@@ -1,34 +1,44 @@
+# run SimulationMCQ_Kirby.R first
+source('~/code/MCQ/SimulationMCQ_Kirby.R')
 
+MCQ_choices_long1_renamed$noise <- noises[1]
+MCQ_choices_long2_renamed$noise <- noises[2]
+MCQ_choices_long2_renamed$ID <- MCQ_choices_long2_renamed$ID + 200
+MCQ_choices_long3_renamed$noise <- noises[3]
+MCQ_choices_long3_renamed$ID <- MCQ_choices_long3_renamed$ID + 400
+MCQ_choices_long4_renamed$noise <- noises[4]
+MCQ_choices_long4_renamed$ID <- MCQ_choices_long4_renamed$ID + 600
 
-df <- SubjectLevelCombinedWithRE
-ldf <- MCQ_choices_long_combined
-
-
-df <- df %>% mutate(log_k_true = case_when(
-  group_k==1 ~'-3.95',
-  group_k==2 ~ '-5.64'
-))
-
+ldf <- rbind(MCQ_choices_long1_renamed,
+            MCQ_choices_long2_renamed,
+            MCQ_choices_long3_renamed,
+            MCQ_choices_long4_renamed)
+# ldf <- MCQ_choices_long_combined
 ldf <- ldf %>% mutate(log_k_true = case_when(
-  group_k==1 ~'-3.95',
-  group_k==2 ~ '-5.64'
-))
+  group==1 ~'-3.95',
+  group==2 ~ '-5.64'
+), noise = as.factor(noise))
 
-# boxplot of recovered by original discount rate
 
-p1 <- ggplot(df, aes(as.factor(log_k_true), log_k_sub)) + 
-  geom_boxplot() + facet_wrap(~noise)
-p2 <- ggplot(df, aes(as.factor(log_k_true), -InterceptRE)) + 
-  geom_boxplot() + facet_wrap(~noise)
-ggarrange(p1,p2)
+# df <- SubjectLevelCombinedWithRE
+sub_df1$noise <- noises[1]
+sub_df2$noise <- noises[2]
+sub_df3$noise <- noises[3]
+sub_df4$noise <- noises[4]
+df <- rbind(sub_df1, sub_df2, sub_df3, sub_df4)
+setwd('~/code/MCQ/')
 
-p3 <- ggplot(df, aes(as.factor(noise), max_consistency)) + 
-  geom_boxplot()
-p4 <- ggplot(df, aes(as.factor(noise), LogkRE)) + 
-  geom_boxplot()
-ggarrange(p3,p4)
+# s <- load('Workspace_combined.RData')
+df <- df %>% mutate(log_k_true = case_when(
+  group==1 ~'-3.95',
+  group==2 ~ '-5.64'
+), noise = as.factor(noise))
 
-m1 <- glmer(choice ~ logk_sc * noise + logk_sc * log_k_true  + 
+
+
+# glmer on simulated data
+
+m1 <- glmer(choice ~ logk_sc * noise + logk_sc * log_k_true  +
               (1|ID), family = binomial, ldf, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
 summary(m1)
 while (any(grepl("failed to converge", m1@optinfo$conv$lme4$messages) )) {
@@ -37,14 +47,37 @@ while (any(grepl("failed to converge", m1@optinfo$conv$lme4$messages) )) {
 summary(m1)
 Anova(m1, '3')
 vif(m1)
-car::Anova(m1, '3')
+em1 <- as_tibble(emmeans(m1, specs  = c("logk_sc", "noise", "log_k_true")))
+em1$choice_tendency <- em1$emmean
+ggplot(em1, aes(log_k_true, choice_tendency, color = noise)) + geom_point() + geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL))
+
+ggplot(em1, aes(log_k_true, choice_tendency, color = noise)) + geom_point() + geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL))
+
+# boxplot of recovered by original discount rate
+# 
+# em2 <- as_tibble(emmeans(m1, specs  = c("logk_sc", "noise", "log_k_true")))
+# em2$choice_tendency <- em2$emmean
+# ggplot(em2, aes(log_k_true, choice_tendency, color = noise)) + geom_point() + geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL))
+# 
+# p1 <- ggplot(df, aes(as.factor(log_k_true), log_k_sub)) + 
+#   geom_boxplot() + facet_wrap(~noise)
+# p2 <- ggplot(df, aes(as.factor(log_k_true), -InterceptRE)) + 
+#   geom_boxplot() + facet_wrap(~noise)
+# ggarrange(p1,p2)
+# 
+# p3 <- ggplot(df, aes(as.factor(noise), max_consistency)) + 
+#   geom_boxplot()
+# p4 <- ggplot(df, aes(as.factor(noise), LogkRE)) + 
+#   geom_boxplot()
+# ggarrange(p3,p4)
 
 
+# the log_k - consistency correlation is also present for Kirby
 m2 <- lm(log_k_sub ~ log_k_true * noise, df)
 summary(m2)
-Anova(m2)
+Anova(m2, type = '3')
 
 m3 <- lm(max_consistency ~ log_k_true * noise, df)
 summary(m3)
-Anova(m3)
+Anova(m3, type = '3')
 

@@ -61,19 +61,20 @@ discounted_values_grp1=MCQ_options$delay_reward*
 discounted_values_grp2=MCQ_options$delay_reward*
   (1/(1+exp(-5.64)*MCQ_options$delay))
 
+noises <- c(0, .33, .67, .1)
 ####Groups 1 and 2, noise 0
 MCQ_choices1=array(data=NA,dim=c(num_subjects*2,30))
 for (s in 1:num_subjects) {
   for (q in 1:30) {
     #group 1 randomly picks a value, mean is imm reward and SD is based on noise times that reward
     noisy_imm_reward1_1=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
-    noisy_discounted_value1_1=rnorm(1,discounted_values_grp1[q],0*discounted_values_grp1[q]) 
+    noisy_discounted_value1_1=rnorm(1,discounted_values_grp1[q],noises[1]*discounted_values_grp1[q]) 
     
     MCQ_choices1[s,q]=ifelse(noisy_imm_reward1_1>noisy_discounted_value1_1,1,0) #1 for imm, 0 for delayed  (if first argument is true, it assigns the value of the second; if immreward is higher, then choice 1; if discounte d value is higher it's 0)
     
     #group 2 
     noisy_imm_reward2_1=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
-    noisy_discounted_value2_1=rnorm(1,discounted_values_grp2[q],0*discounted_values_grp2[q])
+    noisy_discounted_value2_1=rnorm(1,discounted_values_grp2[q],noises[1]*discounted_values_grp2[q])
     
     MCQ_choices1[(num_subjects+s),q]=ifelse(noisy_imm_reward2_1>noisy_discounted_value2_1,1,0) 
   }
@@ -117,14 +118,14 @@ MCQ_choices2=array(data=NA,dim=c(num_subjects*2,30))
 for (s in 1:num_subjects) {
   for (q in 1:30) {
     #group 1 randomly picks a value, mean is imm reward and SD is based on noise times that reward
-    noisy_imm_reward1_2=rnorm(1,MCQ_options$imm_reward[q],0.33*MCQ_options$imm_reward[q])
-    noisy_discounted_value1_2=rnorm(1,discounted_values_grp1[q],0.33*discounted_values_grp1[q]) 
+    noisy_imm_reward1_2=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
+    noisy_discounted_value1_2=rnorm(1,discounted_values_grp1[q],noises[2]*discounted_values_grp1[q]) 
     
     MCQ_choices2[s,q]=ifelse(noisy_imm_reward1_2>noisy_discounted_value1_2,1,0) #1 for imm, 0 for delayed  (if first argument is true, it assigns the value of the second; if immreward is higher, then choice 1; if discounte d value is higher it's 0)
     
     #group 2 
-    noisy_imm_reward2_2=rnorm(1,MCQ_options$imm_reward[q],0.33*MCQ_options$imm_reward[q])
-    noisy_discounted_value2_2=rnorm(1,discounted_values_grp2[q],0.33*discounted_values_grp2[q])
+    noisy_imm_reward2_2=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
+    noisy_discounted_value2_2=rnorm(1,discounted_values_grp2[q],noises[2]*discounted_values_grp2[q])
     
     MCQ_choices2[(num_subjects+s),q]=ifelse(noisy_imm_reward2_2>noisy_discounted_value2_2,1,0) 
   }
@@ -138,7 +139,7 @@ MCQ_choices_long2$logk_sc=MCQ_options$logk_sc[MCQ_choices_long2$Question]
 MCQ_choices_long2$group=as.factor(c(rep(1,num_subjects*30),rep(2,num_subjects*30)))
 MCQ_choices_long2$ID=c(rep(1:(2*num_subjects),each=30))
 
-######Kirby's for noise level 0.33
+######Kirby's for noise level noises[2]
 MCQ_choices_long2_renamed<-MCQ_choices_long2 %>% 
   rename(choice = value)
 df<-MCQ_choices_long2_renamed
@@ -160,19 +161,19 @@ for (id in ids) {
 df$log_k_sub = log(df$k_sub)
 sub_df2 <- df %>% select(ID, k_sub, log_k_sub, max_consistency, group) %>% unique()
 
-####Groups 1 and 2, noise 0.67
+####Groups 1 and 2, noise noises[3]
 MCQ_choices3=array(data=NA,dim=c(num_subjects*2,30))
 for (s in 1:num_subjects) {
   for (q in 1:30) {
     #group 1 randomly picks a value, mean is imm reward and SD is based on noise times that reward
-    noisy_imm_reward1_3=rnorm(1,MCQ_options$imm_reward[q],0.67*MCQ_options$imm_reward[q])
-    noisy_discounted_value1_3=rnorm(1,discounted_values_grp1[q],0.67*discounted_values_grp1[q]) 
+    noisy_imm_reward1_3=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
+    noisy_discounted_value1_3=rnorm(1,discounted_values_grp1[q],noises[3]*discounted_values_grp1[q]) 
     
     MCQ_choices3[s,q]=ifelse(noisy_imm_reward1_3>noisy_discounted_value1_3,1,0) #1 for imm, 0 for delayed  (if first argument is true, it assigns the value of the second; if immreward is higher, then choice 1; if discounte d value is higher it's 0)
     
     #group 2 
-    noisy_imm_reward2_3=rnorm(1,MCQ_options$imm_reward[q],0.67*MCQ_options$imm_reward[q])
-    noisy_discounted_value2_3=rnorm(1,discounted_values_grp2[q],0.67*discounted_values_grp2[q])
+    noisy_imm_reward2_3=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
+    noisy_discounted_value2_3=rnorm(1,discounted_values_grp2[q],noises[3]*discounted_values_grp2[q])
     
     MCQ_choices3[(num_subjects+s),q]=ifelse(noisy_imm_reward2_3>noisy_discounted_value2_3,1,0) 
   }
@@ -213,14 +214,14 @@ MCQ_choices4=array(data=NA,dim=c(num_subjects*2,30))
 for (s in 1:num_subjects) {
   for (q in 1:30) {
     #group 1 randomly picks a value, mean is imm reward and SD is based on noise times that reward
-    noisy_imm_reward1_4=rnorm(1,MCQ_options$imm_reward[q],1*MCQ_options$imm_reward[q])
-    noisy_discounted_value1_4=rnorm(1,discounted_values_grp1[q],1*discounted_values_grp1[q]) 
+    noisy_imm_reward1_4=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
+    noisy_discounted_value1_4=rnorm(1,discounted_values_grp1[q],noises[4]*discounted_values_grp1[q]) 
     
     MCQ_choices4[s,q]=ifelse(noisy_imm_reward1_4>noisy_discounted_value1_4,1,0) #1 for imm, 0 for delayed  (if first argument is true, it assigns the value of the second; if immreward is higher, then choice 1; if discounte d value is higher it's 0)
     
     #group 2 
-    noisy_imm_reward2_4=rnorm(1,MCQ_options$imm_reward[q],1*MCQ_options$imm_reward[q])
-    noisy_discounted_value2_4=rnorm(1,discounted_values_grp2[q],1*discounted_values_grp2[q])
+    noisy_imm_reward2_4=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
+    noisy_discounted_value2_4=rnorm(1,discounted_values_grp2[q],noises[4]*discounted_values_grp2[q])
     
     MCQ_choices4[(num_subjects+s),q]=ifelse(noisy_imm_reward2_4>noisy_discounted_value2_4,1,0) 
   }
