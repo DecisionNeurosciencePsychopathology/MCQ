@@ -10,9 +10,9 @@ MCQ_choices_long4_renamed$noise <- noises[4]
 MCQ_choices_long4_renamed$ID <- MCQ_choices_long4_renamed$ID + 600
 
 ldf <- rbind(MCQ_choices_long1_renamed,
-            MCQ_choices_long2_renamed,
-            MCQ_choices_long3_renamed,
-            MCQ_choices_long4_renamed)
+             MCQ_choices_long2_renamed,
+             MCQ_choices_long3_renamed,
+             MCQ_choices_long4_renamed)
 # ldf <- MCQ_choices_long_combined
 ldf <- ldf %>% mutate(log_k_true = case_when(
   group==1 ~'-3.95',
@@ -47,9 +47,9 @@ while (any(grepl("failed to converge", m1@optinfo$conv$lme4$messages) )) {
 summary(m1)
 Anova(m1, '3')
 vif(m1)
+
 em1 <- as_tibble(emmeans(m1, specs  = c("logk_sc", "noise", "log_k_true")))
 em1$choice_tendency <- em1$emmean
-ggplot(em1, aes(log_k_true, choice_tendency, color = noise)) + geom_point() + geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL))
 
 ggplot(em1, aes(log_k_true, choice_tendency, color = noise)) + geom_point() + geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL))
 
@@ -80,4 +80,22 @@ Anova(m2, type = '3')
 m3 <- lm(max_consistency ~ log_k_true * noise, df)
 summary(m3)
 Anova(m3, type = '3')
+
+######Z SCORES
+###z scores glmer
+A<- c(32.328, -1.948, -14.489, -18.640)
+B<- c("log_k_true", "log_k_sc*0.1", "log_k_sc*0.33", "log_k_sc*0.67")
+barplot(A, names.arg=B, ylab="z score")
+###converting t to z for lm predicting log_k_sub (z=(t-50)/10)
+C<-c(-6.8789, -4.9308, -4.8407, -5.0534)
+D<-c("log_k_true", "log_k_true*0.1", "log_k_true*0.33", "log_k_true*0.67")
+barplot(C, names.arg=D, ylab="z score")
+####converting t to z scores lm predicting max_consistency (z=(t-50)/10)
+O<-c(-5, -5.0591,-6.1044, -6.9861)
+P<-c("log_k_true", "log_k_true*0.1", "log_k_true*0.33", "log_k_true*0.67")
+barplot(O, names.arg=P, ylab="t score")
+
+
+
+
 

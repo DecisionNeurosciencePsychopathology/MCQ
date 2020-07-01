@@ -12,6 +12,7 @@ library(car)
 library(readxl)
 library(compareGroups)
 library(haven)
+library(emmeans)
 
 num_subjects=100 #number of subjects per group
 # set up choices from MCQ
@@ -70,13 +71,13 @@ for (s in 1:num_subjects) {
     noisy_imm_reward1_1=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
     noisy_discounted_value1_1=rnorm(1,discounted_values_grp1[q],noises[1]*discounted_values_grp1[q]) 
     
-    MCQ_choices1[s,q]=ifelse(noisy_imm_reward1_1>noisy_discounted_value1_1,1,0) #1 for imm, 0 for delayed  (if first argument is true, it assigns the value of the second; if immreward is higher, then choice 1; if discounte d value is higher it's 0)
+    MCQ_choices1[s,q]=ifelse(noisy_imm_reward1_1>noisy_discounted_value1_1,0,1) #0 for imm; 1 for delayed (if first argument is true, it assigns the value of the second; if immreward is higher, then choice 1; if discounte d value is higher it's 0)
     
     #group 2 
     noisy_imm_reward2_1=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
     noisy_discounted_value2_1=rnorm(1,discounted_values_grp2[q],noises[1]*discounted_values_grp2[q])
     
-    MCQ_choices1[(num_subjects+s),q]=ifelse(noisy_imm_reward2_1>noisy_discounted_value2_1,1,0) 
+    MCQ_choices1[(num_subjects+s),q]=ifelse(noisy_imm_reward2_1>noisy_discounted_value2_1,0,1) 
   }
 }
 MCQ_choices1=data.frame(MCQ_choices1)
@@ -101,7 +102,7 @@ df$k_sub <- NA
 df$max_consistency <- NA
 for (id in ids) {
   for (k in ks) {
-    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k>k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k<k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
+    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k<k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k>k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
   }
   best <- df %>% filter(ID==id & consistency == max(consistency[ID==id])) %>% select(k, consistency)
   df$k_sub[df$ID==id] <- geometric.mean(best$k)
@@ -121,13 +122,12 @@ for (s in 1:num_subjects) {
     noisy_imm_reward1_2=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
     noisy_discounted_value1_2=rnorm(1,discounted_values_grp1[q],noises[2]*discounted_values_grp1[q]) 
     
-    MCQ_choices2[s,q]=ifelse(noisy_imm_reward1_2>noisy_discounted_value1_2,1,0) #1 for imm, 0 for delayed  (if first argument is true, it assigns the value of the second; if immreward is higher, then choice 1; if discounte d value is higher it's 0)
-    
+    MCQ_choices2[s,q]=ifelse(noisy_imm_reward1_2>noisy_discounted_value1_2,0,1) 
     #group 2 
     noisy_imm_reward2_2=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
     noisy_discounted_value2_2=rnorm(1,discounted_values_grp2[q],noises[2]*discounted_values_grp2[q])
     
-    MCQ_choices2[(num_subjects+s),q]=ifelse(noisy_imm_reward2_2>noisy_discounted_value2_2,1,0) 
+    MCQ_choices2[(num_subjects+s),q]=ifelse(noisy_imm_reward2_2>noisy_discounted_value2_2,0,1) 
   }
 }
 MCQ_choices2=data.frame(MCQ_choices2)
@@ -152,7 +152,7 @@ df$k_sub <- NA
 df$max_consistency <- NA
 for (id in ids) {
   for (k in ks) {
-    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k>k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k<k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
+    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k<k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k>k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
   }
   best <- df %>% filter(ID==id & consistency == max(consistency[ID==id])) %>% select(k, consistency)
   df$k_sub[df$ID==id] <- geometric.mean(best$k)
@@ -169,13 +169,12 @@ for (s in 1:num_subjects) {
     noisy_imm_reward1_3=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
     noisy_discounted_value1_3=rnorm(1,discounted_values_grp1[q],noises[3]*discounted_values_grp1[q]) 
     
-    MCQ_choices3[s,q]=ifelse(noisy_imm_reward1_3>noisy_discounted_value1_3,1,0) #1 for imm, 0 for delayed  (if first argument is true, it assigns the value of the second; if immreward is higher, then choice 1; if discounte d value is higher it's 0)
-    
+    MCQ_choices3[s,q]=ifelse(noisy_imm_reward1_3>noisy_discounted_value1_3,0,1) 
     #group 2 
     noisy_imm_reward2_3=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
     noisy_discounted_value2_3=rnorm(1,discounted_values_grp2[q],noises[3]*discounted_values_grp2[q])
     
-    MCQ_choices3[(num_subjects+s),q]=ifelse(noisy_imm_reward2_3>noisy_discounted_value2_3,1,0) 
+    MCQ_choices3[(num_subjects+s),q]=ifelse(noisy_imm_reward2_3>noisy_discounted_value2_3,0,1) 
   }
 }
 MCQ_choices3=data.frame(MCQ_choices3)
@@ -187,7 +186,7 @@ MCQ_choices_long3$logk_sc=MCQ_options$logk_sc[MCQ_choices_long3$Question]
 MCQ_choices_long3$group=as.factor(c(rep(1,num_subjects*30),rep(2,num_subjects*30)))
 MCQ_choices_long3$ID=c(rep(1:(2*num_subjects),each=30))
 
-######Kirby's for noise level 0.33
+######Kirby's for noise noises[3]
 MCQ_choices_long3_renamed<-MCQ_choices_long3 %>% 
   rename(choice = value)
 df<-MCQ_choices_long3_renamed
@@ -199,7 +198,7 @@ df$k_sub <- NA
 df$max_consistency <- NA
 for (id in ids) {
   for (k in ks) {
-    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k>k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k<k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
+    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k<k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k>k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
   }
   best <- df %>% filter(ID==id & consistency == max(consistency[ID==id])) %>% select(k, consistency)
   df$k_sub[df$ID==id] <- geometric.mean(best$k)
@@ -209,7 +208,7 @@ df$log_k_sub = log(df$k_sub)
 sub_df3 <- df %>% select(ID, k_sub, log_k_sub, max_consistency, group) %>% unique()
 
 
-####Groups 1 and 2, noise 1
+####Groups 1 and 2, noise noises 4
 MCQ_choices4=array(data=NA,dim=c(num_subjects*2,30))
 for (s in 1:num_subjects) {
   for (q in 1:30) {
@@ -217,13 +216,12 @@ for (s in 1:num_subjects) {
     noisy_imm_reward1_4=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
     noisy_discounted_value1_4=rnorm(1,discounted_values_grp1[q],noises[4]*discounted_values_grp1[q]) 
     
-    MCQ_choices4[s,q]=ifelse(noisy_imm_reward1_4>noisy_discounted_value1_4,1,0) #1 for imm, 0 for delayed  (if first argument is true, it assigns the value of the second; if immreward is higher, then choice 1; if discounte d value is higher it's 0)
-    
+    MCQ_choices4[s,q]=ifelse(noisy_imm_reward1_4>noisy_discounted_value1_4,0,1) 
     #group 2 
     noisy_imm_reward2_4=rnorm(1,MCQ_options$imm_reward[q],0*MCQ_options$imm_reward[q])
     noisy_discounted_value2_4=rnorm(1,discounted_values_grp2[q],noises[4]*discounted_values_grp2[q])
     
-    MCQ_choices4[(num_subjects+s),q]=ifelse(noisy_imm_reward2_4>noisy_discounted_value2_4,1,0) 
+    MCQ_choices4[(num_subjects+s),q]=ifelse(noisy_imm_reward2_4>noisy_discounted_value2_4,0,1) 
   }
 }
 MCQ_choices4=data.frame(MCQ_choices4)
@@ -247,7 +245,7 @@ df$k_sub <- NA
 df$max_consistency <- NA
 for (id in ids) {
   for (k in ks) {
-    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k>k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k<k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
+    df$consistency[df$ID==id & df$k==k] = (sum(df$ID==id & df$k<k & df$choice==0, na.rm = T) + sum(df$ID==id & df$k>k & df$choice==1, na.rm = T))/(sum(!is.na(df$choice[df$ID==id]))-1)
   }
   best <- df %>% filter(ID==id & consistency == max(consistency[ID==id])) %>% select(k, consistency)
   df$k_sub[df$ID==id] <- geometric.mean(best$k)
@@ -255,5 +253,3 @@ for (id in ids) {
 }
 df$log_k_sub = log(df$k_sub)
 sub_df4 <- df %>% select(ID, k_sub, log_k_sub, max_consistency, group) %>% unique()
-
-
