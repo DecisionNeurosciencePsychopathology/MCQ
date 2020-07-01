@@ -83,18 +83,28 @@ Anova(m3, type = '3')
 
 ######Z SCORES
 ###z scores glmer
+library(tidyverse)
+
 A<- c(32.328, -1.948, -14.489, -18.640)
-B<- c("log_k_true", "log_k_sc*0.1", "log_k_sc*0.33", "log_k_sc*0.67")
-barplot(A, names.arg=B, ylab="z score")
+B<- c("log_k_true", "noise=0.1", "noise=0.33", "noise=0.67")
+d <- as_tibble(A, names = "statistic")
+d$method <- 'MLM'
+d$predictor <- B
+# barplot(A, names.arg=B, ylab="z score")
 ###converting t to z for lm predicting log_k_sub (z=(t-50)/10)
 C<-c(-6.8789, -4.9308, -4.8407, -5.0534)
-D<-c("log_k_true", "log_k_true*0.1", "log_k_true*0.33", "log_k_true*0.67")
-barplot(C, names.arg=D, ylab="z score")
+# the vector of Kirby/lm statistic should have (1) effect of true k on recovered k and (2-4) effects of true noise levels on consistencies
+D<-c("log_k_true", "noise=0.1", "noise=0.33", "noise=0.67")
+# barplot(C, names.arg=D, ylab="z score")
+c <- as_tibble(C, names = "statistic")
+c$method = 'Kirby'
+c$predictor <- D
+d <- rbind(d,c)
+ggplot(d, aes(predictor, statistic, color = method)) + geom_bar()
 ####converting t to z scores lm predicting max_consistency (z=(t-50)/10)
 O<-c(-5, -5.0591,-6.1044, -6.9861)
-P<-c("log_k_true", "log_k_true*0.1", "log_k_true*0.33", "log_k_true*0.67")
+P<-c("log_k_true", "noise=0.1", "noise=0.33", "noise=0.67")
 barplot(O, names.arg=P, ylab="t score")
-
 
 
 
