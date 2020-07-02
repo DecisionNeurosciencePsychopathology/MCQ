@@ -92,20 +92,26 @@ d$method <- 'MLM'
 d$predictor <- B
 # barplot(A, names.arg=B, ylab="z score")
 ###converting t to z for lm predicting log_k_sub (z=(t-50)/10)
-C<-c(-6.8789, -4.9308, -4.8407, -5.0534)
+C<-c(-18.789, -2.635,-7.649, -16.840)
 # the vector of Kirby/lm statistic should have (1) effect of true k on recovered k and (2-4) effects of true noise levels on consistencies
 D<-c("log_k_true", "noise=0.1", "noise=0.33", "noise=0.67")
 # barplot(C, names.arg=D, ylab="z score")
 c <- as_tibble(C, names = "statistic")
 c$method = 'Kirby'
 c$predictor <- D
-d <- rbind(d,c)
-ggplot(d, aes(predictor, statistic, color = method)) + geom_bar()
+k <- rbind(d,c)
+
+
+ggplot(k, aes(predictor, value, color=method)) + geom_point(stat="identity")  
+
+
+
+
+
 ####converting t to z scores lm predicting max_consistency (z=(t-50)/10)
-O<-c(-5, -5.0591,-6.1044, -6.9861)
+O<-c(0, -2.635,-7.649, -16.840)
 P<-c("log_k_true", "noise=0.1", "noise=0.33", "noise=0.67")
 barplot(O, names.arg=P, ylab="t score")
-
 
 
 
