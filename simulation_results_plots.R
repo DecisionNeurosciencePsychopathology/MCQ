@@ -85,14 +85,17 @@ Anova(m3, type = '3')
 ###z scores glmer
 library(tidyverse)
 
-A<- c(32.328, -1.948, -14.489, -18.640)
+###Flipped the sign of log_k_true below (When the true k is lower, 
+#Kirby estimates a lower recovered k whereas the MLM predicts a delayed choice, 
+#which depends on how delayed/immediate are coded.)
+A<- c(-32.328, -1.948, -14.489, -18.640)
 B<- c("log_k_true", "noise=0.1", "noise=0.33", "noise=0.67")
 d <- as_tibble(A, names = "statistic")
 d$method <- 'MLM'
 d$predictor <- B
 # barplot(A, names.arg=B, ylab="z score")
-###converting t to z for lm predicting log_k_sub (z=(t-50)/10)
-C<-c(-18.789, -2.635,-7.649, -16.840)
+###converting t to z for lm predicting log_k_sub z=t*sqrt(N)/sqrt(df[error]).
+C<-c(-18.884, -2.648,-7.688, -16.925)
 # the vector of Kirby/lm statistic should have (1) effect of true k on recovered k and (2-4) effects of true noise levels on consistencies
 D<-c("log_k_true", "noise=0.1", "noise=0.33", "noise=0.67")
 # barplot(C, names.arg=D, ylab="z score")
@@ -102,16 +105,11 @@ c$predictor <- D
 k <- rbind(d,c)
 
 
-ggplot(k, aes(predictor, value, color=method)) + geom_point(stat="identity")  
+ggplot(k, aes(predictor, value, color=method)) + geom_point(stat="identity") + xlab("predictor") + ylab("z statistic")
 
 
 
 
-
-####converting t to z scores lm predicting max_consistency (z=(t-50)/10)
-O<-c(0, -2.635,-7.649, -16.840)
-P<-c("log_k_true", "noise=0.1", "noise=0.33", "noise=0.67")
-barplot(O, names.arg=P, ylab="t score")
 
 
 
