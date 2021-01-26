@@ -38,7 +38,7 @@ df <- df %>% mutate(log_k_true = case_when(
 
 # glmer on simulated data
 
-m1 <- glmer(choice ~ logk_sc * noise + logk_sc * log_k_true  +
+m1 <- glmer(choice ~ logk_sc * noise + logk_sc * log_k_true - 1  +
               (1|ID), family = binomial, ldf, control=glmerControl(nAGQ0initStep=FALSE, optimizer = c("nloptwrap"),optCtr=list(maxfun=2e5)))
 summary(m1)
 while (any(grepl("failed to converge", m1@optinfo$conv$lme4$messages) )) {
