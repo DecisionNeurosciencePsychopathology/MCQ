@@ -1,5 +1,5 @@
 #### improved MLMs to estimate kappa/beta, the revised preference parameter
-# first run simulation_results_plots.R 
+# first run simulation_results_plots.R up to line 38
 
 # rstan ----
 library(rstan)
