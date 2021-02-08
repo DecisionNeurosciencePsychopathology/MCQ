@@ -8,16 +8,17 @@ library(bayestestR)
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 
-mb1 <- stan_glmer(choice ~ logk_sc * noise + logk_sc * log_k_true - 1  +
-              (1|ID), family = binomial, ldf, chains = 4, iter = 4000)
+mb1 <- stan_glmer(choice ~ logk_sc * noise + logk_sc * log_k_true +
+              (1|ID), family = binomial, ldf, iter = 4000)
 summary(mb1)
 # load("mb1.Rdata")
 post1 <- describe_posterior(mb1, centrality = 'median', test = c('p_direction', 'p_significance'))
 post2 <- insight::get_parameters(mb1)
-post2$k <- (post2$`log_k_true-5.64` - post2$noise0)/post2$logk_sc
-post2$k01 <- (post2$noise0.1 - post2$noise0)/(post2$`logk_sc:noise0.1` - post2$logk_sc)
-post2$k033 <- (post2$noise0.33 - post2$noise0)/(post2$`logk_sc:noise0.33` - post2$noise0)
-post2$k067 <- (post2$noise0.67 - post2$noise0)/(post2$`logk_sc:noise0.67` - post2$noise0)
+post2$k <- (post2$`log_k_true-5.64`)/(post2$logk_sc + post2$`logk_sc:log_k_true-5.64`)
+post2$k01 <- (post2$noise0.1)/(post2$logk_sc + post2$`logk_sc:noise0.1`)
+post2$k033 <- (post2$noise0.33)/(post2$logk_sc + post2$`logk_sc:noise0.33`)
+post2$k067 <- (post2$noise0.67)/(post2$logk_sc + post2$`logk_sc:noise0.67`)
+
 
 #test
 describe_posterior(post2)
